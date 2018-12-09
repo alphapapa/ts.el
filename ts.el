@@ -46,7 +46,7 @@
 (defvar ts-default-format "%Y-%m-%d %H:%M:%S %z"
   "Default format for `ts-format'.")
 
-;;;; Macros
+;;;; Functions and Macros
 
 (cl-defmacro ts-defstruct (&rest args)
   "Like `cl-defstruct', but with additional slot options.
@@ -163,9 +163,13 @@ slot `year' and alias `y' would create an alias `ts-y')."
   "Return `ts' struct set to now."
   (make-ts :unix (float-time)))
 
-(cl-defmethod ts-format (format-string (ts ts))
+(cl-defun ts-format (format-string &optional ts)
   "Format timestamp TS with `format-time-string' according to FORMAT-STRING."
-  (format-time-string (or format-string ts-default-format) (ts-unix ts)))
+  ;; `cl-defmethod' can't handle an optional typed argument, so we use `defun' instead.
+  (format-time-string (or format-string ts-default-format)
+                      (if ts
+                          (ts-unix ts)
+                        (ts-unix (ts-now)))))
 
 (cl-defmethod ts-update ((ts ts))
   "Update timestamp TS's Unix timestamp from other slots.
@@ -188,9 +192,50 @@ If FORCE is non-nil, update already-filled slots."
        ,@(cl-loop for slot in slots
                   for accessor = (intern (concat "ts-" (symbol-name slot)))
                   collect `(,accessor ts))
+       ;; ,@(cl-loop for slot in slots
+       ;;            for accessor = (intern (concat "ts-" (symbol-name slot)))
+       ;;            collect `(,accessor ts))
        ts)))
-
 (ts-define-fill)
+
+(defmacro ts-define-reset ()
+  "Define `ts-reset' method that resets all applicable slots of `ts' object from its `unix' slot."
+  (let ((slots (->> (cl-struct-slot-info 'ts)
+                    (-map #'car)
+                    (--select (not (member it '(unix internal cl-tag-slot)))))))
+    `(cl-defmethod ts-reset ((ts ts))
+       "Reset all slots of timestamp TS except `unix'.
+Allows the slots to be recomputed after updating `unix'."
+       ,@(cl-loop for slot in slots
+                  for accessor = (intern (concat "ts-" (symbol-name slot)))
+                  collect `(setf (,accessor ts) nil))
+       ts)))
+(ts-define-reset)
+
+;; FIXME: This fails, and I'm not sure if it's a limitation of gvs or if I did something wrong:
+;;   (ts-incf (ts-moy (ts-now)))
+
+;; These incf and decf functions are very cool, and they may make the adjust function unnecessary,
+;; because you can do something like (ts-incf (ts-moy ts) 120) and the timestamp is set to 10 years
+;; in the future.
+
+(cl-defmacro ts-incf (field &optional (value 1))
+  "Increment timestamp FIELD by VALUE (default 1) and update Unix timestamp."
+  `(progn
+     (ts-fill ,(cadr field))
+     (prog1
+         (cl-incf ,field ,value)
+       (ts-update ,(cadr field))
+       (ts-reset ,(cadr field)))))
+
+(cl-defmacro ts-decf (field &optional (value 1))
+  "Decrement timestamp FIELD by VALUE (default 1) and update Unix timestamp."
+  `(progn
+     (ts-fill ,(cadr field))
+     (prog1
+         (cl-decf ,field ,value)
+       (ts-update ,(cadr field))
+       (ts-reset ,(cadr field)))))
 
 (cl-defmethod ts-adjust (period (ts ts))
   "Adjust timestamp TS by PERIOD and return TS.
@@ -203,8 +248,13 @@ PERIOD should be understood by `org-read-date', e.g. \"+1d\"."
 (defun ts-period-secs (period)
   "Return seconds represented by PERIOD.
 PERIOD should be understood by `org-read-date'."
+  ;; FIXME: This gives inconsistent results.  I guess we'll have to calculate it another way.
   (let* ((future-time (float-time (org-read-date nil t period))))
     (- future-time (float-time))))
+
+(cl-defmethod ts-difference ((a ts) (b ts))
+  "Return difference between timestamps A and B."
+  (- (ts-unix a) (ts-unix b)))
 
 ;;;; Footer
 

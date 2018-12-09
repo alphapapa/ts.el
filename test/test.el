@@ -24,3 +24,34 @@
     (ts-adjust "+1y" ts)
     (ts-fill ts 'force)
     (should (equal (ts-year ts) (1+ old-year)))))
+
+(ert-deftest ts-difference ()
+  ""
+  (let* ((a (ts-now))
+         (b (copy-ts a)))
+    (ts-fill b)
+    (cl-incf (ts-year b))
+    (ts-update b)
+    (ts-difference b a)))
+
+(ert-deftest ts-incf ()
+  ""
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (ts-incf (ts-year ts))
+    (should (equal (ts-year ts) (1+ year))))
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (ts-incf (ts-year ts) 2)
+    (should (equal (ts-year ts) (+ 2 year)))))
+
+(ert-deftest ts-decf ()
+  ""
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (ts-decf (ts-year ts))
+    (should (equal (ts-year ts) (1- year))))
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (ts-decf (ts-year ts) 2)
+    (should (equal (ts-year ts) (- year 2)))))

@@ -1,0 +1,79 @@
+#+TITLE: ts.el
+#+PROPERTY: LOGGING nil
+
+~ts~ is a date and time library for Emacs.  It's currently in prototype stage.  It aims to be more convenient than patterns like ~(string-to-number (format-time-string "%Y"))~ by providing easy accessors, like ~(ts-year (ts-now))~.
+
+One of the principles it aims to follow is using unambiguous (or at least, less ambiguous and somewhat intuitive) function names.  For example, ~day~ could mean day-of-the-month as a number, day-of-the-week as a number, day-of-the-week as an abbreviated name, day-of-the-week as a full name, etc.  Instead, we use names like ~dom~ for day-of-the-month as a number (also available as ~d~ for convenience, which corresponds to ~%d~ in ~format-time-string~), ~dow~ for day-of-the-week as a number, ~day~ for day-of-the-week as an abbreviated name, ~day-full~ for day-of-the-week as a full name, etc.
+
+Here are some examples of what you can do:
+
+Get parts of the current date:
+
+#+BEGIN_SRC elisp
+  (ts-dow (ts-now))  ;=> 6
+  (ts-day (ts-now))  ;=> "Sat"
+  (ts-day-full (ts-now))  ;=> "Saturday"
+  (ts-moy (ts-now))  ;=> 12
+  (ts-mon (ts-now))  ;=> "Dec"
+  (ts-month (ts-now))  ;=> "December"
+  (ts-dom (ts-now))  ;=> 8
+  (ts-year (ts-now))  ;=> 2018
+  (ts-hour (ts-now))  ;=> 23
+  (ts-min (ts-now))  ;=> 9
+  (ts-sec (ts-now))  ;=> 14
+  (ts-tz (ts-now))  ;=> -600
+  (ts-tz-offset (ts-now))  ;=> "-0600"
+  (ts-tz-name (ts-now))  ;=> "CST"
+#+END_SRC
+
+Increment the current date by 10 years:
+
+#+BEGIN_SRC elisp
+  (let ((ts (ts-now)))
+    (ts-incf (ts-year ts) 10)
+    (list :now (ts-format nil (ts-now))
+          :10-years-from-now (ts-format nil ts))) 
+  ;=> (:now "2018-12-08 22:58:07 -0600" :10-years-from-now "2028-12-08 22:58:07 -0600")
+#+END_SRC
+
+What day of the week was 2 days ago?
+
+#+BEGIN_SRC elisp
+  (let ((ts (ts-now)))
+    (ts-decf (ts-dom ts) 2)
+    (ts-day-name ts))  ;=> "Thursday"
+#+END_SRC
+
+Get timestamp for this time last week:
+
+#+BEGIN_SRC elisp
+  (let ((ts (ts-now)))
+    (ts-decf (ts-dom ts) 7)
+    (ts-unix ts))  ;=> 1543728398.0
+
+  ;; To confirm that the difference really is 7 days:
+  (/ (- (ts-unix (ts-now))
+        (let ((ts (ts-now)))
+          (ts-decf (ts-dom ts) 7)
+          (ts-unix ts)))
+     86400)  ;=> 7.000000567521762
+
+  ;; Or confirm by formatting:
+  (let ((ts (ts-now)))
+    (ts-decf (ts-dom ts) 7)
+    (list :now (ts-format nil)
+          :last-week (ts-format nil ts)))
+  ;;=> (:now "2018-12-08 23:31:37 -0600" :last-week "2018-12-01 23:31:37 -0600") 
+#+END_SRC
+
+* License
+
+GPLv3
+
+# Local Variables:
+# eval: (require 'org-make-toc)
+# before-save-hook: org-make-toc
+# org-export-with-properties: ()
+# org-export-with-title: t
+# End:
+
