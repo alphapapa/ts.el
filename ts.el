@@ -221,9 +221,6 @@ If FORCE is non-nil, update already-filled slots."
        ,@(cl-loop for slot in slots
                   for accessor = (intern (concat "ts-" (symbol-name slot)))
                   collect `(,accessor ts))
-       ;; ,@(cl-loop for slot in slots
-       ;;            for accessor = (intern (concat "ts-" (symbol-name slot)))
-       ;;            collect `(,accessor ts))
        ts)))
 (ts-define-fill)
 
