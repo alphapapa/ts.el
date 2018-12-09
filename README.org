@@ -10,20 +10,20 @@ Here are some examples of what you can do:
 Get parts of the current date:
 
 #+BEGIN_SRC elisp
-  (ts-dow (ts-now))  ;=> 6
-  (ts-day (ts-now))  ;=> "Sat"
+  (ts-dow (ts-now))       ;=> 6
+  (ts-day (ts-now))       ;=> "Sat"
   (ts-day-full (ts-now))  ;=> "Saturday"
-  (ts-moy (ts-now))  ;=> 12
-  (ts-mon (ts-now))  ;=> "Dec"
-  (ts-month (ts-now))  ;=> "December"
-  (ts-dom (ts-now))  ;=> 8
-  (ts-year (ts-now))  ;=> 2018
-  (ts-hour (ts-now))  ;=> 23
-  (ts-min (ts-now))  ;=> 9
-  (ts-sec (ts-now))  ;=> 14
-  (ts-tz (ts-now))  ;=> -600
-  (ts-tz-offset (ts-now))  ;=> "-0600"
-  (ts-tz-name (ts-now))  ;=> "CST"
+  (ts-moy (ts-now))       ;=> 12
+  (ts-mon (ts-now))       ;=> "Dec"
+  (ts-month (ts-now))     ;=> "December"
+  (ts-dom (ts-now))       ;=> 8
+  (ts-year (ts-now))      ;=> 2018
+  (ts-hour (ts-now))      ;=> 23
+  (ts-min (ts-now))       ;=> 9
+  (ts-sec (ts-now))       ;=> 14
+  (ts-tz (ts-now))        ;=> -600
+  (ts-tz-offset (ts-now)) ;=> "-0600"
+  (ts-tz-name (ts-now))   ;=> "CST"
 #+END_SRC
 
 Increment the current date by 10 years:
@@ -69,25 +69,25 @@ Get timestamp for this time last week:
 Some accessors have aliases similar to ~format-time-string~ constructors:
 
 #+BEGIN_SRC elisp
-  (ts-hour (ts-now))  ;=> 0
-  (ts-H (ts-now))  ;=> 0
+  (ts-hour (ts-now))   ;=> 0
+  (ts-H (ts-now))      ;=> 0
 
-  (ts-minute (ts-now))  ;=> 56
-  (ts-min (ts-now))  ;=> 56
-  (ts-M (ts-now))  ;=> 56
+  (ts-minute (ts-now)) ;=> 56
+  (ts-min (ts-now))    ;=> 56
+  (ts-M (ts-now))      ;=> 56
 
-  (ts-second (ts-now))  ;=> 38
-  (ts-sec (ts-now))  ;=> 38
-  (ts-S (ts-now))  ;=> 38
+  (ts-second (ts-now)) ;=> 38
+  (ts-sec (ts-now))    ;=> 38
+  (ts-S (ts-now))      ;=> 38
 
-  (ts-year (ts-now))  ;=> 2018
-  (ts-Y (ts-now))  ;=> 2018
+  (ts-year (ts-now))   ;=> 2018
+  (ts-Y (ts-now))      ;=> 2018
 
-  (ts-moy (ts-now))  ;=> 12
-  (ts-m (ts-now))  ;=> 12
+  (ts-moy (ts-now))    ;=> 12
+  (ts-m (ts-now))      ;=> 12
 
-  (ts-dom (ts-now))  ;=> 9
-  (ts-d (ts-now))  ;=> 9
+  (ts-dom (ts-now))    ;=> 9
+  (ts-d (ts-now))      ;=> 9
 #+END_SRC
 
 * License
