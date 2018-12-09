@@ -5,7 +5,7 @@
 ;; Author: Adam Porter <adam@alphapapa.net
 ;; URL: http://github.com/alphapapa/ts.el
 ;; Version: 0.1-pre
-;; Package-Requires: ((emacs "26.1"))
+;; Package-Requires: ((emacs "26.1") (dash "2.14.1"))
 ;; Keywords: date time timestamp
 
 ;; This file is not part of GNU Emacs.
@@ -40,6 +40,8 @@
 ;;;; Requirements
 
 (require 'org)
+
+(require 'dash)
 
 ;;;; Variables
 
