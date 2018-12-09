@@ -167,3 +167,21 @@ Funcall overhead is noticeable.  We could provide the macro or defsubst in addit
 |------------------+--------------------+---------------+----------+------------------|
 | ts-parse         | 1.02               |   0.031561369 |        0 |              0.0 |
 | ts-parse ts-unix | slowest            |   0.032193442 |        0 |              0.0 |
+
+** Accessor dispatch vs. ~(string-to-number (format-time-string...~
+
+#+BEGIN_SRC elisp
+  (let* ((ts (ts-now))
+         (unix (ts-unix ts)))
+    (ts-fill ts)
+    (bench-multi :times 1000
+      :ensure-equal t
+      :forms (("Accessor dispatch" (ts-year ts))
+              ("(string-to-number (format-time-string..." (string-to-number (format-time-string "%Y" unix))))))
+#+END_SRC
+
+#+RESULTS:
+| Form                                     | x faster than next | Total runtime | # of GCs | Total GC runtime |
+|------------------------------------------+--------------------+---------------+----------+------------------|
+| Accessor dispatch                        | 93.17              |   0.000514627 |        0 |              0.0 |
+| (string-to-number (format-time-string... | slowest            |   0.047949907 |        0 |              0.0 |
