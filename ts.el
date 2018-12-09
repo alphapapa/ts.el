@@ -114,17 +114,17 @@ slot `year' and alias `y' would create an alias `ts-y')."
 
 (ts-defstruct ts
   (hour nil :accessor-init (string-to-number (format-time-string "%H" (ts-unix struct)))
-        :aliases (h))
+        :aliases (H))
   (minute nil :accessor-init (string-to-number (format-time-string "%M" (ts-unix struct)))
-          :aliases (min))
+          :aliases (min M))
   (second nil :accessor-init (string-to-number (format-time-string "%S" (ts-unix struct)))
-          :aliases (sec))
+          :aliases (sec S))
   (dom nil :accessor-init (string-to-number (format-time-string "%d" (ts-unix struct)))
        :aliases (d))
   (moy nil :accessor-init (string-to-number (format-time-string "%m" (ts-unix struct)))
        :aliases (m month-of-year))
   (year nil :accessor-init (string-to-number (format-time-string "%Y" (ts-unix struct)))
-        :aliases (y))
+        :aliases (Y))
 
   (dow nil :accessor-init (string-to-number (format-time-string "%w" (ts-unix struct)))
        :aliases (day-of-week))

@@ -66,6 +66,30 @@ Get timestamp for this time last week:
   ;;=> (:now "2018-12-08 23:31:37 -0600" :last-week "2018-12-01 23:31:37 -0600") 
 #+END_SRC
 
+Some accessors have aliases similar to ~format-time-string~ constructors:
+
+#+BEGIN_SRC elisp
+  (ts-hour (ts-now))  ;=> 0
+  (ts-H (ts-now))  ;=> 0
+
+  (ts-minute (ts-now))  ;=> 56
+  (ts-min (ts-now))  ;=> 56
+  (ts-M (ts-now))  ;=> 56
+
+  (ts-second (ts-now))  ;=> 38
+  (ts-sec (ts-now))  ;=> 38
+  (ts-S (ts-now))  ;=> 38
+
+  (ts-year (ts-now))  ;=> 2018
+  (ts-Y (ts-now))  ;=> 2018
+
+  (ts-moy (ts-now))  ;=> 12
+  (ts-m (ts-now))  ;=> 12
+
+  (ts-dom (ts-now))  ;=> 9
+  (ts-d (ts-now))  ;=> 9
+#+END_SRC
+
 * License
 
 GPLv3
