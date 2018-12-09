@@ -92,6 +92,12 @@ Some accessors have aliases similar to ~format-time-string~ constructors:
   (ts-d (ts-now))      ;=> 9
 #+END_SRC
 
+Parse a string into a timestamp object:
+
+#+BEGIN_SRC elisp
+  (ts-format nil (ts-parse "sat dec 8 2018 12:12:12"))  ;=> "2018-12-08 12:12:12 -0600"
+#+END_SRC
+
 * License
 
 GPLv3

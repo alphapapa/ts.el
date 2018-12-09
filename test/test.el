@@ -69,3 +69,23 @@
          (past (copy-ts now)))
     (ts-decf (ts-year past))
     (should (ts< past now))))
+
+
+(ert-deftest ts-parse ()
+  ""
+  (let ((ts (ts-parse "sat 8 dec 2018")))
+    (should (eq (ts-Y ts) 2018))
+    (should (eq (ts-m ts) 12))
+    (should (eq (ts-d ts) 8))
+    (should (eq (ts-dow ts) 6))
+    (should (eq (ts-H ts) 0))
+    (should (eq (ts-M ts) 0))
+    (should (eq (ts-S ts) 0)))
+  (let ((ts (ts-parse "sat 8 dec 2018 12:12:12")))
+    (should (eq (ts-Y ts) 2018))
+    (should (eq (ts-m ts) 12))
+    (should (eq (ts-d ts) 8))
+    (should (eq (ts-dow ts) 6))
+    (should (eq (ts-H ts) 12))
+    (should (eq (ts-M ts) 12))
+    (should (eq (ts-S ts) 12))))

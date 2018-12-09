@@ -175,6 +175,18 @@ slot `year' and alias `y' would create an alias `ts-y')."
 
 ;;;; Functions
 
+(defsubst ts-parse (string)
+  "Return new `ts' struct, parsing STRING with `parse-time-string'."
+  (let ((parsed (parse-time-string string)))
+    ;; Fill nil values
+    (cl-loop for i from 0 to 5
+             when (null (nth i parsed))
+             do (setf (nth i parsed) 0))
+    (->> parsed
+         (apply #'encode-time)
+         float-time
+         (make-ts :unix))))
+
 (defun ts-now ()
   "Return `ts' struct set to now."
   (make-ts :unix (float-time)))
@@ -188,10 +200,11 @@ slot `year' and alias `y' would create an alias `ts-y')."
                         (ts-unix (ts-now)))))
 
 (cl-defmethod ts-update ((ts ts))
-  "Update timestamp TS's Unix timestamp from other slots.
+  "Return timestamp TS after updating its Unix timestamp from its other slots.
 To be used after setting slots."
   (pcase-let* (((cl-struct ts second minute hour dom moy year) ts))
-    (setf (ts-unix ts) (float-time (encode-time second minute hour dom moy year)))))
+    (setf (ts-unix ts) (float-time (encode-time second minute hour dom moy year)))
+    ts))
 
 (defmacro ts-define-fill ()
   "Define `ts-fill' method that fills all applicable slots of `ts' object from its `unix' slot."

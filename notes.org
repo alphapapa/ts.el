@@ -75,3 +75,89 @@ No difference when formatting.
 | Internal time  | slowest            |          0.009583258 |        0 |              0.0 |
 
 Getting the current time as a Unix timestamp is slightly faster.  The docs for ~float-time~ warn that it's floating point and that ~current-time~ should be used if precision is needed.  I don't think that's important for us.
+
+** ~org-fix-decoded-time~ vs. ~ts-~ setters
+
+*** With filling
+
+#+BEGIN_SRC elisp
+  (let* ((s "mon 9 dec 2018")
+         (parsed (parse-time-string s)))
+    (bench-multi :times 1000
+      :ensure-equal t
+      :forms (("org-fix-decoded-time" (ts-fill (make-ts :unix (float-time (apply #'encode-time (org-fix-decoded-time parsed))))))
+              ("cl-loop nth" (ts-fill (make-ts :unix (float-time (apply #'encode-time (cl-loop for i from 0 to 5
+                                                                                               when (null (nth i parsed))
+                                                                                               do (setf (nth i parsed) 0)
+                                                                                               finally return parsed))))))
+              ("cl-loop elt" (ts-fill (make-ts :unix (float-time (apply #'encode-time (cl-loop for i from 0 to 5
+                                                                                               when (null (elt parsed i))
+                                                                                               do (setf (elt parsed i) 0)
+                                                                                               finally return parsed))))))
+              ("ts- accessors" (-let* (((S M H d m Y) parsed))
+                                 (ts-fill (ts-update (make-ts :second (or S 0) :minute (or M 0) :hour (or H 0)
+                                                              :dom (or d 0) :moy (or m 0) :year (or Y 0))))))
+              )))
+#+END_SRC
+
+#+RESULTS:
+| Form                 | x faster than next |      Total runtime | # of GCs |    Total GC runtime |
+|----------------------+--------------------+--------------------+----------+---------------------|
+| ts- accessors        |               2.11 | 0.6814406310000001 |        0 |                 0.0 |
+| org-fix-decoded-time |               1.00 |         1.43786147 |        1 | 0.40317458900000247 |
+| cl-loop nth          |               1.01 | 1.4420543490000002 |        1 | 0.40715375199999926 |
+| cl-loop elt          |            slowest | 1.4522118320000001 |        1 | 0.41347589399998697 |
+
+*** Just returning unix time
+
+#+BEGIN_SRC elisp
+  (let* ((s "mon 9 dec 2018"))
+    (bench-multi :times 1000
+      :ensure-equal t
+      :forms (("org-fix-decoded-time" (ts-unix (make-ts :unix (float-time (apply #'encode-time (org-fix-decoded-time (parse-time-string s)))))))
+              ("cl-loop nth" (ts-unix (make-ts :unix (float-time (apply #'encode-time (cl-loop with parsed = (parse-time-string s)
+                                                                                               for i from 0 to 5
+                                                                                               when (null (nth i parsed))
+                                                                                               do (setf (nth i parsed) 0)
+                                                                                               finally return parsed))))))
+              ("cl-loop elt" (ts-unix (make-ts :unix (float-time (apply #'encode-time (cl-loop with parsed = (parse-time-string s)
+                                                                                               for i from 0 to 5
+                                                                                               when (null (elt parsed i))
+                                                                                               do (setf (elt parsed i) 0)
+                                                                                               finally return parsed))))))
+              ("ts- accessors" (-let* ((parsed (parse-time-string s))
+                                       ((S M H d m Y) parsed))
+                                 (ts-unix (ts-update (make-ts :second (or S 0) :minute (or M 0) :hour (or H 0)
+                                                              :dom (or d 0) :moy (or m 0) :year (or Y 0))))))
+              ("ts-parse" (ts-unix (ts-parse s)))
+              ("ts-parse-defsubst" (ts-unix (ts-parse-defsubst s)))
+              ("ts-parse-macro" (ts-unix (ts-parse-macro s))))))
+#+END_SRC
+
+#+RESULTS:
+| Form                 | x faster than next | Total runtime | # of GCs | Total GC runtime |
+|----------------------+--------------------+---------------+----------+------------------|
+| ts-parse-macro       |               1.00 |   0.028634316 |        0 |              0.0 |
+| ts-parse-defsubst    |               1.01 |    0.02869171 |        0 |              0.0 |
+| cl-loop nth          |               1.00 |   0.029103046 |        0 |              0.0 |
+| cl-loop elt          |               1.04 |   0.029246385 |        0 |              0.0 |
+| org-fix-decoded-time |               1.00 |   0.030463535 |        0 |              0.0 |
+| ts- accessors        |               1.09 |   0.030527408 |        0 |              0.0 |
+| ts-parse             |            slowest |   0.033408084 |        0 |              0.0 |
+
+Funcall overhead is noticeable.  We could provide the macro or defsubst in addition to the function, so users in tight loops could avoid funcall overhead.
+
+*** As ~ts-parse~
+
+#+BEGIN_SRC elisp
+  (let* ((s "mon 9 dec 2018"))
+    (bench-multi :times 1000
+      :forms (("ts-parse" (ts-parse s))
+              ("ts-parse ts-unix" (ts-unix (ts-parse s))))))
+#+END_SRC
+
+#+RESULTS:
+| Form             | x faster than next | Total runtime | # of GCs | Total GC runtime |
+|------------------+--------------------+---------------+----------+------------------|
+| ts-parse         | 1.02               |   0.031561369 |        0 |              0.0 |
+| ts-parse ts-unix | slowest            |   0.032193442 |        0 |              0.0 |
