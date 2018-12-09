@@ -5,6 +5,8 @@
 
 One of the principles it aims to follow is using unambiguous (or at least, less ambiguous and somewhat intuitive) function names.  For example, ~day~ could mean day-of-the-month as a number, day-of-the-week as a number, day-of-the-week as an abbreviated name, day-of-the-week as a full name, etc.  Instead, we use names like ~dom~ for day-of-the-month as a number (also available as ~d~ for convenience, which corresponds to ~%d~ in ~format-time-string~), ~dow~ for day-of-the-week as a number, ~day~ for day-of-the-week as an abbreviated name, ~day-full~ for day-of-the-week as a full name, etc.
 
+Another feature is that formatted date parts are computed lazily rather than when a timestamp object is instantiated, and the computed parts are then cached for later access without recomputing.  Behind the scenes, this avoids unnecessary ~(string-to-number (format-time-string...~ calls.
+
 Here are some examples of what you can do:
 
 Get parts of the current date:
