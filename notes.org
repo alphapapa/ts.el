@@ -1,0 +1,77 @@
+#+TITLE: ts.el notes
+
+* Plans
+:PROPERTIES:
+:ID:       2e19b304-f54b-455f-b9fe-ad5be5b31086
+:END:
+
++  Timestamp library, making it easy to work with timestamps and dates in Emacs.
++  Using ~defstructs~
+     -  Define accessors with macros
+          +  Accessors store precomputed data for later access (e.g. if day-of-week is not yet computed, store it in the struct and return it)
++  Store timestamps as either Emacs internal time values or as Unix timestamps
+     -  Need to benchmark which is faster to work with, format, decode, increment, etc.  Unix timestamps would be simpler to deal with, but maybe slower...?
++  Accessors should be named unambiguously
+     -  e.g. ~dow~ for day-of-week, ~dom~ for day-of-month, rather than ~day~, which could be either
+          +  And maybe ~dow-num~ or ~dow-name~ to be even clearer
+
+* Tools
+
+** Reset all struct accessors
+
+#+BEGIN_SRC elisp
+  (cl-loop for (name . opts) in (cl-struct-slot-info 'ts)
+         for accessor = (intern (concat "ts-" (symbol-name name)))
+         for aliases = (--map (intern (concat "ts-" (symbol-name it)))
+                              (plist-get (cdr opts) :aliases))
+         do (unintern accessor)
+         do (--each aliases
+              (unintern it)))
+#+END_SRC
+
+* Benchmarking
+
+** Emacs internal time values vs. Unix timestamps
+
+#+BEGIN_SRC elisp :results silent
+  (cl-defstruct ts
+    hour minute second
+    dom dow doe
+    moy
+    year
+    tz
+    internal unix)
+#+END_SRC
+
+*** Formatting
+
+#+BEGIN_SRC elisp
+  (let ((format "%Y-%m-%d %H:%M:%S"))
+    (bench-multi :times 100000
+      :forms (("Unix timestamp" (format-time-string format 1544311232))
+              ("Internal time" (format-time-string format '(23564 20962 864324 108000))))))
+#+END_SRC
+
+#+RESULTS:
+| Form           | x faster than next |     Total runtime | # of GCs |   Total GC runtime |
+|----------------+--------------------+-------------------+----------+--------------------|
+| Internal time  | 1.00               |       4.846531505 |        5 | 1.1269977660000006 |
+| Unix timestamp | slowest            | 4.851822707999999 |        5 | 1.1267304740000004 |
+
+No difference when formatting.
+
+*** Getting current time
+
+#+BEGIN_SRC elisp
+  (bench-multi :times 100000
+    :forms (("Unix timestamp" (float-time))
+            ("Internal time" (current-time))))
+#+END_SRC
+
+#+RESULTS:
+| Form           | x faster than next |        Total runtime | # of GCs | Total GC runtime |
+|----------------+--------------------+----------------------+----------+------------------|
+| Unix timestamp | 1.12               | 0.008584705999999998 |        0 |              0.0 |
+| Internal time  | slowest            |          0.009583258 |        0 |              0.0 |
+
+Getting the current time as a Unix timestamp is slightly faster.  The docs for ~float-time~ warn that it's floating point and that ~current-time~ should be used if precision is needed.  I don't think that's important for us.
