@@ -216,6 +216,7 @@ If FORCE is non-nil, update already-filled slots."
 
 (defmacro ts-define-reset ()
   "Define `ts-reset' method that resets all applicable slots of `ts' object from its `unix' slot."
+  ;; MAYBE: Just make a new ts object, copying the unix slot.
   (let ((slots (->> (cl-struct-slot-info 'ts)
                     (-map #'car)
                     (--select (not (member it '(unix internal cl-tag-slot)))))))
