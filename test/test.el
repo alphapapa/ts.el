@@ -55,3 +55,17 @@
          (year (ts-year ts)))
     (ts-decf (ts-year ts) 2)
     (should (equal (ts-year ts) (- year 2)))))
+
+;; TODO: Other comparator tests
+
+(ert-deftest ts< ()
+  ""
+  (let (a b)
+    (setq a (ts-now))
+    (sleep-for 1)
+    (setq b (ts-now))
+    (should (ts< a b)))
+  (let* ((now (ts-now))
+         (past (copy-ts now)))
+    (ts-decf (ts-year past))
+    (should (ts< past now))))

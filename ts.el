@@ -256,6 +256,29 @@ PERIOD should be understood by `org-read-date'."
   "Return difference between timestamps A and B."
   (- (ts-unix a) (ts-unix b)))
 
+;;;;; Comparators
+
+(cl-defmethod ts= ((a ts) (b ts))
+  "Return non-nil if timestamp A is the same as timestamp B.
+Compares only the timestamps' `unix' slots."
+  (= (ts-unix a) (ts-unix b)))
+
+(cl-defmethod ts< ((a ts) (b ts))
+  "Return non-nil if timestamp A is less than timestamp B."
+  (< (ts-unix a) (ts-unix b)))
+
+(cl-defmethod ts<= ((a ts) (b ts))
+  "Return non-nil if timestamp A is <= timestamp B."
+  (<= (ts-unix a) (ts-unix b)))
+
+(cl-defmethod ts> ((a ts) (b ts))
+  "Return non-nil if timestamp A is greater than timestamp B."
+  (> (ts-unix a) (ts-unix b)))
+
+(cl-defmethod ts>= ((a ts) (b ts))
+  "Return non-nil if timestamp A is >= timestamp B."
+  (>= (ts-unix a) (ts-unix b)))
+
 ;;;; Footer
 
 (provide 'ts)
