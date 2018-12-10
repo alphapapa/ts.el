@@ -306,3 +306,416 @@ Funcall overhead is noticeable.  We could provide the macro or defsubst in addit
 |     14 |         0.2749 |   0.0349 |    -0.2400 |   7.8714 |
 |     15 |         0.2958 |   0.0357 |    -0.2601 |   8.2849 |
 |     16 |         0.3169 |   0.0368 |    -0.2802 |   8.6213 |
+
+** Old ~ts-fill~ vs new ~ts-fill~
+
+Including struct and macro/function definitions because the code may change in the future.
+
+*NOTE*: Something weird happens when evaluating these macro-defining, function-defining blocks in Org.  After running them, the functions aren't even defined in Emacs.  I don't understand how that's possible.  So some of the results are...weird.  Anyway, when I manually eval the macros and functions outside of the source block, and then run the benchmark part only, the results show that the "new" and ~defun~-based functions are much faster.
+
+This code just changes the number of times ~format-time-string~ is called:
+
+#+BEGIN_SRC elisp
+  (unintern 'ts-fill)
+  (unintern 'ts-fill2)
+
+  (ts-defstruct ts
+    (hour nil
+          :accessor-init (string-to-number (format-time-string "%H" (ts-unix struct)))
+          :aliases (H)
+          :constructor "%H"
+          :type integer)
+    (minute nil
+            :accessor-init (string-to-number (format-time-string "%M" (ts-unix struct)))
+            :aliases (min M)
+            :constructor "%M"
+            :type integer)
+    (second nil
+            :accessor-init (string-to-number (format-time-string "%S" (ts-unix struct)))
+            :aliases (sec S)
+            :constructor "%S"
+            :type integer)
+    (dom nil
+         :accessor-init (string-to-number (format-time-string "%d" (ts-unix struct)))
+         :aliases (d)
+         :constructor "%d"
+         :type integer)
+    (moy nil
+         :accessor-init (string-to-number (format-time-string "%m" (ts-unix struct)))
+         :aliases (m month-of-year)
+         :constructor "%m"
+         :type integer)
+    (year nil
+          :accessor-init (string-to-number (format-time-string "%Y" (ts-unix struct)))
+          :aliases (Y)
+          :constructor "%Y"
+          :type integer)
+
+    (dow nil
+         :accessor-init (string-to-number (format-time-string "%w" (ts-unix struct)))
+         :aliases (day-of-week)
+         :constructor "%w"
+         :type integer)
+    (day nil
+         :accessor-init (format-time-string "%a" (ts-unix struct))
+         :aliases (day-abbr)
+         :constructor "%a")
+    (day-full nil
+              :accessor-init (format-time-string "%A" (ts-unix struct))
+              :aliases (day-name)
+              :constructor "%A")
+    ;; (doe nil
+    ;;      :accessor-init (days-between (format-time-string "%Y-%m-%d 00:00:00" (ts-unix struct))
+    ;;                                   "1970-01-01 00:00:00")
+    ;;      :aliases (day-of-epoch))
+    (doy nil
+         :accessor-init (string-to-number (format-time-string "%j" (ts-unix struct)))
+         :aliases (day-of-year)
+         :constructor "%j"
+         :type integer)
+
+    (woy nil
+         :accessor-init (string-to-number (format-time-string "%V" (ts-unix struct)))
+         :aliases (week week-of-year)
+         :constructor "%V"
+         :type integer)
+
+    (mon nil
+         :accessor-init (format-time-string "%b" (ts-unix struct))
+         :aliases (month-abbr)
+         :constructor "%b")
+    (month nil
+           :accessor-init (format-time-string "%B" (ts-unix struct))
+           :aliases (month-name)
+           :constructor "%B")
+
+    (tz-abbr nil
+             :accessor-init (format-time-string "%Z" (ts-unix struct))
+             :constructor "%Z")
+    (tz-offset nil
+               :accessor-init (format-time-string "%z" (ts-unix struct))
+               :constructor "%z")
+    ;; MAYBE: Add tz-offset-minutes
+
+    (internal nil
+              :accessor-init (apply #'encode-time (decode-time (ts-unix struct))))
+    (unix nil
+          :accessor-init (pcase-let* (((cl-struct ts second minute hour dom moy year) cl-x))
+                           (if (and second minute hour dom moy year)
+                               (float-time (encode-time second minute hour dom moy year))
+                             (float-time)))))
+
+  (defmacro ts-define-fill ()
+    "Define `ts-fill' method that fills all applicable slots of `ts' object from its `unix' slot."
+    (let ((slots (->> (cl-struct-slot-info 'ts)
+                      (-map #'car)
+                      (--select (not (member it '(unix internal cl-tag-slot)))))))
+      `(defun ts-fill (ts &optional force)
+         "Fill all slots of timestamp TS from Unix timestamp and return TS.
+  If FORCE is non-nil, update already-filled slots."
+         (when force
+           ,@(cl-loop for slot in slots
+                      for accessor = (intern (concat "ts-" (symbol-name slot)))
+                      collect `(setf (,accessor ts) nil)))
+         ,@(cl-loop for slot in slots
+                    for accessor = (intern (concat "ts-" (symbol-name slot)))
+                    collect `(,accessor ts))
+         ts)))
+  (ts-define-fill)
+
+  (defmacro ts-define-fill2 ()
+    "Define `ts-fill' method that fills all applicable slots of `ts' object from its `unix' slot."
+    (let* ((slots (->> (cl-struct-slot-info 'ts)
+                       (--select (and (not (member (car it) '(unix internal cl-tag-slot)))
+                                      (plist-get (cddr it) :constructor)))
+
+                       (--map (list (intern (concat ":" (symbol-name (car it))))
+                                    (cddr it)))))
+           (keywords (-map #'first slots))
+           (constructors (->> slots
+                              (--map (plist-get (cadr it) :constructor))
+                              -non-nil))
+           (types (--map (plist-get (cadr it) :type) slots))
+           (format-string (s-join "\f" constructors)))
+      `(defun ts-fill2 (ts)
+         "Fill all slots of timestamp TS from Unix timestamp and return TS.
+  If FORCE is non-nil, update already-filled slots."
+         (let* ((time-values (split-string (format-time-string ,format-string (ts-unix ts)) "\f"))
+                (args (cl-loop for type in ',types
+                               for tv in time-values
+                               for keyword in ',keywords
+                               append (list keyword (pcase type
+                                                      ('integer (string-to-number tv))
+                                                      (_ tv))))))
+           (apply #'make-ts :unix (ts-unix ts) args)))))
+  (ts-define-fill2)
+
+  (bench-multi :times 1000
+    :ensure-equal t
+    :forms (("old" (ts-fill (make-ts :unix 1544410412.2087605)))
+            ("new" (ts-fill2 (make-ts :unix 1544410412.2087605)))))
+
+#+END_SRC
+
+#+RESULTS:
+| Form | x faster than next | Total runtime | # of GCs |    Total GC runtime |
+|------+--------------------+---------------+----------+---------------------|
+| new  | 5.85               |   0.153482234 |        0 |                 0.0 |
+| old  | slowest            |   0.897823082 |        1 | 0.25289141199999676 |
+
+This compares both ways defined with ~defun~.  The ~cl-defmethod~ dispatch overhead is /very/ significant:
+
+#+BEGIN_SRC elisp
+  (unintern 'ts-fill)
+  (unintern 'ts-fill2)
+
+  (ts-defstruct ts
+    (hour nil
+          :accessor-init (string-to-number (format-time-string "%H" (ts-unix struct)))
+          :aliases (H)
+          :constructor "%H"
+          :type integer)
+    (minute nil
+            :accessor-init (string-to-number (format-time-string "%M" (ts-unix struct)))
+            :aliases (min M)
+            :constructor "%M"
+            :type integer)
+    (second nil
+            :accessor-init (string-to-number (format-time-string "%S" (ts-unix struct)))
+            :aliases (sec S)
+            :constructor "%S"
+            :type integer)
+    (dom nil
+         :accessor-init (string-to-number (format-time-string "%d" (ts-unix struct)))
+         :aliases (d)
+         :constructor "%d"
+         :type integer)
+    (moy nil
+         :accessor-init (string-to-number (format-time-string "%m" (ts-unix struct)))
+         :aliases (m month-of-year)
+         :constructor "%m"
+         :type integer)
+    (year nil
+          :accessor-init (string-to-number (format-time-string "%Y" (ts-unix struct)))
+          :aliases (Y)
+          :constructor "%Y"
+          :type integer)
+
+    (dow nil
+         :accessor-init (string-to-number (format-time-string "%w" (ts-unix struct)))
+         :aliases (day-of-week)
+         :constructor "%w"
+         :type integer)
+    (day nil
+         :accessor-init (format-time-string "%a" (ts-unix struct))
+         :aliases (day-abbr)
+         :constructor "%a")
+    (day-full nil
+              :accessor-init (format-time-string "%A" (ts-unix struct))
+              :aliases (day-name)
+              :constructor "%A")
+    ;; (doe nil
+    ;;      :accessor-init (days-between (format-time-string "%Y-%m-%d 00:00:00" (ts-unix struct))
+    ;;                                   "1970-01-01 00:00:00")
+    ;;      :aliases (day-of-epoch))
+    (doy nil
+         :accessor-init (string-to-number (format-time-string "%j" (ts-unix struct)))
+         :aliases (day-of-year)
+         :constructor "%j"
+         :type integer)
+
+    (woy nil
+         :accessor-init (string-to-number (format-time-string "%V" (ts-unix struct)))
+         :aliases (week week-of-year)
+         :constructor "%V"
+         :type integer)
+
+    (mon nil
+         :accessor-init (format-time-string "%b" (ts-unix struct))
+         :aliases (month-abbr)
+         :constructor "%b")
+    (month nil
+           :accessor-init (format-time-string "%B" (ts-unix struct))
+           :aliases (month-name)
+           :constructor "%B")
+
+    (tz-abbr nil
+             :accessor-init (format-time-string "%Z" (ts-unix struct))
+             :constructor "%Z")
+    (tz-offset nil
+               :accessor-init (format-time-string "%z" (ts-unix struct))
+               :constructor "%z")
+    ;; MAYBE: Add tz-offset-minutes
+
+    (internal nil
+              :accessor-init (apply #'encode-time (decode-time (ts-unix struct))))
+    (unix nil
+          :accessor-init (pcase-let* (((cl-struct ts second minute hour dom moy year) cl-x))
+                           (if (and second minute hour dom moy year)
+                               (float-time (encode-time second minute hour dom moy year))
+                             (float-time)))))
+
+  (defmacro ts-define-fill ()
+    "Define `ts-fill' method that fills all applicable slots of `ts' object from its `unix' slot."
+    (let ((slots (->> (cl-struct-slot-info 'ts)
+                      (-map #'car)
+                      (--select (not (member it '(unix internal cl-tag-slot)))))))
+      `(cl-defmethod ts-fill ((ts ts) &optional force)
+         "Fill all slots of timestamp TS from Unix timestamp and return TS.
+    If FORCE is non-nil, update already-filled slots."
+         (when force
+           ,@(cl-loop for slot in slots
+                      for accessor = (intern (concat "ts-" (symbol-name slot)))
+                      collect `(setf (,accessor ts) nil)))
+         ,@(cl-loop for slot in slots
+                    for accessor = (intern (concat "ts-" (symbol-name slot)))
+                    collect `(,accessor ts))
+         ts)))
+  (ts-define-fill)
+
+  (defmacro ts-define-fill2 ()
+    "Define `ts-fill' method that fills all applicable slots of `ts' object from its `unix' slot."
+    (let* ((slots (->> (cl-struct-slot-info 'ts)
+                       (--select (and (not (member (car it) '(unix internal cl-tag-slot)))
+                                      (plist-get (cddr it) :constructor)))
+
+                       (--map (list (intern (concat ":" (symbol-name (car it))))
+                                    (cddr it)))))
+           (keywords (-map #'first slots))
+           (constructors (->> slots
+                              (--map (plist-get (cadr it) :constructor))
+                              -non-nil))
+           (types (--map (plist-get (cadr it) :type) slots))
+           (format-string (s-join "\f" constructors)))
+      `(defun ts-fill2 (ts)
+         "Fill all slots of timestamp TS from Unix timestamp and return TS.
+  If FORCE is non-nil, update already-filled slots."
+         (let* ((time-values (split-string (format-time-string ,format-string (ts-unix ts)) "\f"))
+                (args (cl-loop for type in ',types
+                               for tv in time-values
+                               for keyword in ',keywords
+                               append (list keyword (pcase type
+                                                      ('integer (string-to-number tv))
+                                                      (_ tv))))))
+           (apply #'make-ts :unix (ts-unix ts) args)))))
+  (ts-define-fill2)
+
+  (bench-multi :times 1000
+    :ensure-equal t
+    :forms (("old" (ts-fill (make-ts :unix 1544410412.2087605)))
+            ("new" (ts-fill2 (make-ts :unix 1544410412.2087605)))))
+#+END_SRC
+
+#+RESULTS:
+| Form | x faster than next |       Total runtime | # of GCs | Total GC runtime |
+|------+--------------------+---------------------+----------+------------------|
+| new  | 2.51               | 0.15029577900000002 |        0 |              0.0 |
+| old  | slowest            |         0.377474529 |        0 |              0.0 |
+
+** Comparing ~defun~ and ~cl-defmethod~
+
+#+BEGIN_SRC elisp
+  (unintern 'ts-fill-method)
+  (defmacro ts-define-fill-method ()
+    "Define `ts-fill' method that fills all applicable slots of `ts' object from its `unix' slot."
+    (let ((slots (->> (cl-struct-slot-info 'ts)
+                      (-map #'car)
+                      (--select (not (member it '(unix internal cl-tag-slot)))))))
+      `(cl-defmethod ts-fill-method ((ts ts) &optional force)
+         "Fill all slots of timestamp TS from Unix timestamp and return TS.
+   If FORCE is non-nil, update already-filled slots."
+         (when force
+           ,@(cl-loop for slot in slots
+                      for accessor = (intern (concat "ts-" (symbol-name slot)))
+                      collect `(setf (,accessor ts) nil)))
+         ,@(cl-loop for slot in slots
+                    for accessor = (intern (concat "ts-" (symbol-name slot)))
+                    collect `(,accessor ts))
+         ts)))
+  (ts-define-fill-method)
+
+  (unintern 'ts-fill-defun)
+  (defmacro ts-define-fill-defun ()
+    "Define `ts-fill' method that fills all applicable slots of `ts' object from its `unix' slot."
+    (let ((slots (->> (cl-struct-slot-info 'ts)
+                      (-map #'car)
+                      (--select (not (member it '(unix internal cl-tag-slot)))))))
+      `(defun ts-fill-defun (ts &optional force)
+         "Fill all slots of timestamp TS from Unix timestamp and return TS.
+   If FORCE is non-nil, update already-filled slots."
+         (when force
+           ,@(cl-loop for slot in slots
+                      for accessor = (intern (concat "ts-" (symbol-name slot)))
+                      collect `(setf (,accessor ts) nil)))
+         ,@(cl-loop for slot in slots
+                    for accessor = (intern (concat "ts-" (symbol-name slot)))
+                    collect `(,accessor ts))
+         ts)))
+  (ts-define-fill-defun)
+
+  (bench-multi :times 10
+    :ensure-equal t
+    :forms (("cl-defmethod" (ts-fill-method (make-ts :unix 1544410412.2087605)))
+            ("defun" (ts-fill-defun (make-ts :unix 1544410412.2087605)))))
+#+END_SRC
+
+#+RESULTS:
+| Form         | x faster than next | Total runtime | # of GCs | Total GC runtime |
+|--------------+--------------------+---------------+----------+------------------|
+| cl-defmethod | 1.71               |    0.00389861 |        0 |              0.0 |
+| defun        | slowest            |   0.006647152 |        0 |              0.0 |
+
+With byte-compilation:
+
+#+BEGIN_SRC elisp
+  (unintern 'ts-fill-method)
+  (defmacro ts-define-fill-method ()
+    "Define `ts-fill' method that fills all applicable slots of `ts' object from its `unix' slot."
+    (let ((slots (->> (cl-struct-slot-info 'ts)
+                      (-map #'car)
+                      (--select (not (member it '(unix internal cl-tag-slot)))))))
+      `(cl-defmethod ts-fill-method ((ts ts) &optional force)
+         "Fill all slots of timestamp TS from Unix timestamp and return TS.
+   If FORCE is non-nil, update already-filled slots."
+         (when force
+           ,@(cl-loop for slot in slots
+                      for accessor = (intern (concat "ts-" (symbol-name slot)))
+                      collect `(setf (,accessor ts) nil)))
+         ,@(cl-loop for slot in slots
+                    for accessor = (intern (concat "ts-" (symbol-name slot)))
+                    collect `(,accessor ts))
+         ts)))
+  (byte-compile (ts-define-fill-method))
+
+  (unintern 'ts-fill-defun)
+  (defmacro ts-define-fill-defun ()
+    "Define `ts-fill' method that fills all applicable slots of `ts' object from its `unix' slot."
+    (let ((slots (->> (cl-struct-slot-info 'ts)
+                      (-map #'car)
+                      (--select (not (member it '(unix internal cl-tag-slot)))))))
+      `(defun ts-fill-defun (ts &optional force)
+         "Fill all slots of timestamp TS from Unix timestamp and return TS.
+   If FORCE is non-nil, update already-filled slots."
+         (when force
+           ,@(cl-loop for slot in slots
+                      for accessor = (intern (concat "ts-" (symbol-name slot)))
+                      collect `(setf (,accessor ts) nil)))
+         ,@(cl-loop for slot in slots
+                    for accessor = (intern (concat "ts-" (symbol-name slot)))
+                    collect `(,accessor ts))
+         ts)))
+  (byte-compile (ts-define-fill-defun))
+
+  (bench-multi :times 10
+    :ensure-equal t
+    :forms (("cl-defmethod" (ts-fill-method (make-ts :unix 1544410412.2087605)))
+            ("defun" (ts-fill-defun (make-ts :unix 1544410412.2087605)))))
+#+END_SRC
+
+#+RESULTS:
+| Form         | x faster than next | Total runtime | # of GCs | Total GC runtime |
+|--------------+--------------------+---------------+----------+------------------|
+| defun        | 1.07               |   0.003677682 |        0 |              0.0 |
+| cl-defmethod | slowest            |   0.003933501 |        0 |              0.0 |
+
+This seems to show that ~cl-defmethod~ may be faster when not byte-compiled, but ~defun~ is faster when byte-compiled...?
