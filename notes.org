@@ -185,3 +185,124 @@ Funcall overhead is noticeable.  We could provide the macro or defsubst in addit
 |------------------------------------------+--------------------+---------------+----------+------------------|
 | Accessor dispatch                        | 93.17              |   0.000514627 |        0 |              0.0 |
 | (string-to-number (format-time-string... | slowest            |   0.047949907 |        0 |              0.0 |
+
+** Filling all fields at once with ~(split-string (format-time-string...~
+
+#+BEGIN_SRC elisp
+  (let ((a (ts-now))
+        (b (ts-now)))
+    (bench-multi :times 1000
+      :ensure-equal t
+      :forms (("Filling just year" (ts-year a))
+              ("Filling all fields" (ts-year (cl-loop with vals = (split-string (format-time-string "%H\f%M\f%S\f%d\f%m\f%Y\f%w\f%a\f%A\f%j\f%V\f%b\f%B\f%Z\f%z" (ts-unix b)) "\f")
+                                                      for f in '(:hour :minute :second
+                                                                       :dom :moy :year
+                                                                       :dow :day :day-full
+                                                                       :doy :woy
+                                                                       :mon :month
+                                                                       :tz-abbr :tz-offset)
+                                                      for i from 0
+                                                      for val = (nth i vals)
+                                                      for val = (or (ignore-errors (string-to-number val))
+                                                                    val)
+                                                      append (list f val) into data
+                                                      finally return (apply #' make-ts data)))))))
+#+END_SRC
+
+#+RESULTS:
+| Form               | x faster than next |         Total runtime | # of GCs | Total GC runtime |
+|--------------------+--------------------+-----------------------+----------+------------------|
+| Filling just year  | 111.27             | 0.0005753919999999999 |        0 |              0.0 |
+| Filling all fields | slowest            |   0.06402511300000001 |        0 |              0.0 |
+
+#+BEGIN_SRC elisp
+  (let ((a (ts-now))
+        (b (ts-now))
+        (c (ts-now)))
+    (bench-multi :times 1000
+      :ensure-equal t
+      :forms (("Filling just year" (ts-year a))
+              ("Filling all fields with ts-fill" (ts-year (ts-fill b)))
+              ("Filling all fields" (ts-year (cl-loop with vals = (split-string (format-time-string "%H\f%M\f%S\f%d\f%m\f%Y\f%w\f%a\f%A\f%j\f%V\f%b\f%B\f%Z\f%z" (ts-unix c)) "\f")
+                                                      for f in '(:hour :minute :second
+                                                                       :dom :moy :year
+                                                                       :dow :day :day-full
+                                                                       :doy :woy
+                                                                       :mon :month
+                                                                       :tz-abbr :tz-offset)
+                                                      for i from 0
+                                                      for val = (nth i vals)
+                                                      for val = (or (ignore-errors (string-to-number val))
+                                                                    val)
+                                                      append (list f val) into data
+                                                      finally return (apply #' make-ts data)))))))
+#+END_SRC
+
+#+RESULTS:
+| Form                            | x faster than next |       Total runtime | # of GCs | Total GC runtime |
+|---------------------------------+--------------------+---------------------+----------+------------------|
+| Filling just year               |              26.19 |         0.000578383 |        0 |              0.0 |
+| Filling all fields with ts-fill |               4.26 |         0.015147096 |        0 |              0.0 |
+| Filling all fields              |            slowest | 0.06453187299999999 |        0 |              0.0 |
+
+#+BEGIN_SRC elisp
+  (let ((unix (ts-unix (ts-now))))
+    (bench-multi :times 1000
+      :ensure-equal t
+      :forms (("format-time-string for each field"
+               (cl-loop for c in '("%H" "%M" "%S" "%d" "%m" "%Y" "%w" "%a" "%A" "%j" "%V" "%b" "%B" "%Z" "%z")
+                        collect (format-time-string c unix)))
+              ("format-time-string once" (split-string (format-time-string "%H\f%M\f%S\f%d\f%m\f%Y\f%w\f%a\f%A\f%j\f%V\f%b\f%B\f%Z\f%z" unix) "\f")))))
+#+END_SRC
+
+#+RESULTS:
+| Form                              | x faster than next |        Total runtime | # of GCs | Total GC runtime |
+|-----------------------------------+--------------------+----------------------+----------+------------------|
+| format-time-string once           | 8.72               | 0.035605714999999996 |        0 |              0.0 |
+| format-time-string for each field | slowest            |  0.31055773799999997 |        0 |              0.0 |
+
+#+BEGIN_SRC elisp
+  (let* ((unix (ts-unix (ts-now)))
+         (constructors '("%H" "%M" "%S" "%d" "%m" "%Y" "%w" "%a" "%A" "%j" "%V" "%b" "%B" "%Z" "%z"))
+         (results (cl-loop for i from 0 to (length constructors)
+                           collect (progn
+                                     (garbage-collect)
+                                     (let* ((fields (-slice constructors 0 i))
+                                            (multi-string (s-join "\f" fields))
+                                            (multi-calls (car (benchmark-run-compiled 1000
+                                                                (cl-loop for field in fields
+                                                                         collect (format-time-string field unix)))))
+                                            (multi-field (car (benchmark-run-compiled 1000
+                                                                (split-string (format-time-string multi-string unix)))))
+                                            (difference (format "%.04f" (- multi-field multi-calls ))))
+                                       (list (1+ i)
+                                             (format "%.04f" multi-calls)
+                                             (format "%.04f" multi-field)
+                                             difference
+                                             (format "%.04f" (/ multi-calls
+                                                         multi-field)))))))
+         (table (list '("Fields" "Multiple calls" "One call" "Difference" "x faster")
+                      'hline)))
+    (append table results))
+
+#+END_SRC
+
+#+RESULTS:
+| Fields | Multiple calls | One call | Difference | x faster |
+|--------+----------------+----------+------------+----------|
+|      1 |         0.0001 |   0.0215 |     0.0214 |   0.0043 |
+|      2 |         0.0217 |   0.0231 |     0.0014 |   0.9385 |
+|      3 |         0.0428 |   0.0249 |    -0.0180 |   1.7223 |
+|      4 |         0.0639 |   0.0256 |    -0.0384 |   2.5004 |
+|      5 |         0.0848 |   0.0264 |    -0.0585 |   3.2179 |
+|      6 |         0.1059 |   0.0271 |    -0.0788 |   3.9039 |
+|      7 |         0.1269 |   0.0282 |    -0.0988 |   4.5074 |
+|      8 |         0.1479 |   0.0290 |    -0.1189 |   5.1008 |
+|      9 |         0.1693 |   0.0301 |    -0.1392 |   5.6169 |
+|     10 |         0.1904 |   0.0310 |    -0.1594 |   6.1446 |
+|     11 |         0.2113 |   0.0318 |    -0.1795 |   6.6403 |
+|     12 |         0.2326 |   0.0329 |    -0.1997 |   7.0796 |
+|     13 |         0.2537 |   0.0338 |    -0.2199 |   7.5002 |
+|     14 |         0.2749 |   0.0349 |    -0.2400 |   7.8714 |
+|     15 |         0.2958 |   0.0357 |    -0.2601 |   8.2849 |
+|     16 |         0.3169 |   0.0368 |    -0.2802 |   8.6213 |
