@@ -39,8 +39,6 @@
 
 ;;;; Requirements
 
-(require 'org)
-
 (require 'dash)
 
 ;;;; Variables
@@ -214,23 +212,24 @@ slot `year' and alias `y' would create an alias `ts-y')."
          float-time
          (make-ts :unix))))
 
-(defun ts-now ()
+(defsubst ts-now ()
   "Return `ts' struct set to now."
   (make-ts :unix (float-time)))
 
-(defun ts-format (format-string &optional ts)
-  "Format timestamp TS with `format-time-string' according to FORMAT-STRING."
+(defsubst ts-format (&optional format-string ts)
+  "Format timestamp TS with `format-time-string' according to FORMAT-STRING.
+If FORMAT-STRING is nil, use the value of `ts-default-format'.
+If TS is nil, use the current time."
   (format-time-string (or format-string ts-default-format)
-                      (if ts
-                          (ts-unix ts)
-                        (ts-unix (ts-now)))))
+                      (when ts
+                        (ts-unix ts))))
 
-(defun ts-update (ts)
+(defsubst ts-update (ts)
   "Return timestamp TS after updating its Unix timestamp from its other slots.
-To be used after setting slots."
+Non-destructive.  To be used after setting slots with,
+e.g. `ts-fill'."
   (pcase-let* (((cl-struct ts second minute hour dom moy year) ts))
-    (setf (ts-unix ts) (float-time (encode-time second minute hour dom moy year)))
-    ts))
+    (make-ts :unix (float-time (encode-time second minute hour dom moy year)))))
 
 (defmacro ts-define-fill ()
   "Define `ts-fill' function that fills all applicable slots of `ts' object from its `unix' slot."
@@ -245,82 +244,139 @@ To be used after setting slots."
                             (--map (plist-get (cadr it) :constructor))
                             -non-nil))
          (types (--map (plist-get (cadr it) :type) slots))
-         (format-string (s-join "\f" constructors)))
+         (format-string (s-join "\f" constructors))
+         (value-conversions (cl-loop for type in types
+                                     for keyword in keywords
+                                     for i from 0
+                                     for val = `(nth ,i time-values)
+                                     append (list keyword (pcase type
+                                                            ('integer `(string-to-number ,val))
+                                                            (_ val))))))
+    ;; MAYBE: Construct the record manually?  Probably not worth it, but might eke out a bit more speed.
     `(defun ts-fill (ts)
-       "Fill all slots of timestamp TS from Unix timestamp and return TS.
-If FORCE is non-nil, update already-filled slots."
-       (let* ((time-values (split-string (format-time-string ,format-string (ts-unix ts)) "\f"))
-              (args (cl-loop for type in ',types
-                             for tv in time-values
-                             for keyword in ',keywords
-                             append (list keyword (pcase type
-                                                    ('integer (string-to-number tv))
-                                                    (_ tv))))))
-         (apply #'make-ts :unix (ts-unix ts) args)))))
+       "Return TS having filled all slots from its Unix timestamp.
+This is non-destructive."
+       (let ((time-values (split-string (format-time-string ,format-string (ts-unix ts)) "\f")))
+         (make-ts :unix (ts-unix ts) ,@value-conversions)))))
 (ts-define-fill)
 
-(defmacro ts-define-reset ()
-  "Define `ts-reset' function that resets all applicable slots of `ts' object from its `unix' slot."
-  ;; MAYBE: Just make a new ts object, copying the unix slot.
-  (let ((slots (->> (cl-struct-slot-info 'ts)
-                    (-map #'car)
-                    (--select (not (member it '(unix internal cl-tag-slot)))))))
-    `(defun ts-reset (ts)
-       "Reset all slots of timestamp TS except `unix'.
-Allows the slots to be recomputed after updating `unix'."
-       ,@(cl-loop for slot in slots
-                  for accessor = (intern (concat "ts-" (symbol-name slot)))
-                  collect `(setf (,accessor ts) nil))
-       ts)))
-(ts-define-reset)
+(defsubst ts-reset (ts)
+  "Return TS with all slots cleared except `unix'.
+Non-destructive.  The same as:
+
+    (make-ts :unix (ts-unix ts))"
+  (make-ts :unix (ts-unix ts)))
 
 ;; FIXME: This fails, and I'm not sure if it's a limitation of gvs or if I did something wrong:
 ;;   (ts-incf (ts-moy (ts-now)))
-
-(defun ts-adjust (period ts)
-  "Adjust timestamp TS by PERIOD and return TS.
-PERIOD should be understood by `org-read-date', e.g. \"+1d\"."
-  ;; FIXME: `org-read-date' doesn't accept very many formats.  Should either write our own version
-  ;; or use GNU date.
-  (cl-incf (ts-unix ts) (ts-period-secs period))
-  ts)
-
-(defun ts-period-secs (period)
-  "Return seconds represented by PERIOD.
-PERIOD should be understood by `org-read-date'."
-  ;; FIXME: This gives inconsistent results.  I guess we'll have to calculate it another way.
-  (let* ((future-time (float-time (org-read-date nil t period))))
-    (- future-time (float-time))))
 
 (defun ts-difference (a b)
   "Return difference between timestamps A and B."
   (- (ts-unix a) (ts-unix b)))
 
-;;;;; Generalized variables
+;;;;; Adjustors
 
-;; These incf and decf functions are very cool, and they may make the adjust function unnecessary,
-;; because you can do something like (ts-incf (ts-moy ts) 120) and the timestamp is set to 10 years
-;; in the future.
+;; These functions are very cool, and they may make the adjust function unnecessary, because you can
+;; do something like (ts-adjust 'moy 120 (ts-now)) and get a timestamp 10 years in the future.
+
+;;;;;; Non-destructive
+
+;; These non-destructive versions take the slot symbol as an argument and the object last, and they
+;; return the timestamp object rather than the new slot value, making them suitable for use in
+;; threading macros when the initial form is a sexp rather than a value or variable.
+
+(defun ts-adjust (&rest adjustments)
+  "Return new timestamp having applied ADJUSTMENTS to TS.
+ADJUSTMENTS should be a series of alternating SLOTS and VALUES by
+which to adjust them.  For example, this form returns a new
+timestamp that is 47 hours into the future:
+
+  (ts-adjust 'hour -1 'dow +2 (ts-now))
+
+Since the timestamp argument is last, it's suitable for use in a
+threading macro."
+  (declare (advertised-calling-convention (&rest adjustments ts) nil))
+  (let* ((ts (-last-item adjustments))
+         (adjustments (nbutlast adjustments))
+         (ts (ts-fill ts)))
+    (cl-loop for (slot change) on adjustments by #'cddr
+             do (cl-incf (cl-struct-slot-value 'ts slot ts) change))
+    (make-ts :unix (ts-unix (ts-update ts)))))
+
+(defsubst ts-inc (slot value ts)
+  "Return a new timestamp based on TS with its SLOT incremented by VALUE.
+SLOT should be specified as a plain symbol, not a keyword."
+  (setq ts (ts-fill ts))
+  (cl-incf (cl-struct-slot-value 'ts slot ts) value)
+  (make-ts :unix (ts-unix (ts-update ts))))
+
+(defsubst ts-dec (slot value ts)
+  "Return a new timestamp based on TS with its SLOT decremented by VALUE.
+SLOT should be specified as a plain symbol, not a keyword."
+  (setq ts (ts-fill ts))
+  (cl-decf (cl-struct-slot-value 'ts slot ts) value)
+  (make-ts :unix (ts-unix (ts-update ts))))
+
+;;;;;; Generalized variables
+
+;; These destructive versions act like `cl-incf'.  They are slightly less suitable for use in
+;; threading macros, because it's not possible to do, e.g. this:
+
+;;   (-> (ts-now)
+;;       (ts-adjustf 'day 1))
+
+;; ...because `ts-now' doesn't return a generalized variable.  But this still works:
+
+;;   (let ((ts (ts-now)))
+;;     (-> ts (ts-adjustf 'dom 1)))
 
 ;;  TODO: Look at `cl-incf' implementation, consider whether we should imitate it.
 
-(cl-defmacro ts-incf (field &optional (value 1))
-  "Increment timestamp FIELD by VALUE (default 1) and update Unix timestamp."
-  `(progn
-     (ts-fill ,(cadr field))
-     (prog1
-         (cl-incf ,field ,value)
-       (ts-update ,(cadr field))
-       (ts-reset ,(cadr field)))))
+(defmacro ts-adjustf (ts &rest adjustments)
+  "Return timestamp TS having applied ADJUSTMENTS.
+This function is destructive, as it calls `setf' on TS.
 
-(cl-defmacro ts-decf (field &optional (value 1))
-  "Decrement timestamp FIELD by VALUE (default 1) and update Unix timestamp."
+ADJUSTMENTS should be a series of alternating SLOTS and VALUES by
+which to adjust them.  For example, this form adjusts a timestamp
+to 47 hours into the future:
+
+  (let ((ts (ts-now)))
+    (ts-adjustf (ts-now) 'hour -1 'dow +2))"
+  ;; MAYBE: Is it possible to make this kind of macro work in a threading macro by taking its TS
+  ;; argument last?  It only seems to work if the TS is a symbol rather than a form, because of how
+  ;; generalized variables work, but that makes it less useful and more error-prone.
+  (cl-flet ((accessor (slot) (intern (concat "ts-" (symbol-name (cadr slot))))))
+    ;; We use the accessor functions rather than `cl-struct-slot-value', because it's slightly
+    ;; faster to use the accessors, even though `cl-struct-slot-value' is supposed to be
+    ;; byte-compiled to essentially the same thing (although it's possible I'm doing something
+    ;; wrong).
+    `(progn
+       (setf ,ts (ts-fill ,ts))
+       ,@(cl-loop for (slot change) on adjustments by #'cddr
+                  collect `(cl-incf (,(accessor slot) ,ts) ,change))
+       (setf ,ts (ts-update ,ts)))))
+
+(cl-defmacro ts-incf (place &optional (value 1))
+  "Increment timestamp PLACE by VALUE (default 1), update its Unix timestamp, and return the new value of PLACE."
   `(progn
-     (ts-fill ,(cadr field))
+     (setf ,(cadr place) (ts-fill ,(cadr place)))
      (prog1
-         (cl-decf ,field ,value)
-       (ts-update ,(cadr field))
-       (ts-reset ,(cadr field)))))
+         (cl-incf ,place ,value)
+       (setf ,(cadr place)
+             (make-ts :unix (ts-unix
+                             (ts-update
+                              ,(cadr place))))))))
+
+(cl-defmacro ts-decf (place &optional (value 1))
+  "Decrement timestamp PLACE by VALUE (default 1), update its Unix timestamp, and return the new value of PLACE."
+  `(progn
+     (setf ,(cadr place) (ts-fill ,(cadr place)))
+     (prog1
+         (cl-decf ,place ,value)
+       (setf ,(cadr place)
+             (make-ts :unix (ts-unix
+                             (ts-update
+                              ,(cadr place))))))))
 
 ;;;;; Comparators
 

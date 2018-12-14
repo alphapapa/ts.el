@@ -25,14 +25,16 @@ Unix timestamps, by definition, are in UTC.  We need to ensure that timezones ar
 
 ** Reset all struct accessors
 
-#+BEGIN_SRC elisp
+#+BEGIN_SRC elisp :results none
   (cl-loop for (name . opts) in (cl-struct-slot-info 'ts)
-         for accessor = (intern (concat "ts-" (symbol-name name)))
-         for aliases = (--map (intern (concat "ts-" (symbol-name it)))
-                              (plist-get (cdr opts) :aliases))
-         do (unintern accessor)
-         do (--each aliases
-              (unintern it)))
+           for accessor = (intern (concat "ts-" (symbol-name name)))
+           for aliases = (--map (intern (concat "ts-" (symbol-name it)))
+                                (plist-get (cdr opts) :aliases))
+           for cmacro = (intern (concat "ts-" (symbol-name name) "--cmacro")) 
+           do (unintern accessor)
+           do (--each aliases
+                (unintern it))
+           do (unintern cmacro))
 #+END_SRC
 
 * Benchmarking
@@ -719,3 +721,122 @@ With byte-compilation:
 | cl-defmethod | slowest            |   0.003933501 |        0 |              0.0 |
 
 This seems to show that ~cl-defmethod~ may be faster when not byte-compiled, but ~defun~ is faster when byte-compiled...?
+
+** ~ts-incf~ vs. ~ts-incf*~
+
+~ts-incf*~ uses ~cl-struct-slot-value~ to make access slightly easier by only having to specify the slot instead of calling the accessor.  It's nice to see that performance is identical!
+
+#+BEGIN_SRC elisp
+  (bench-multi :times 1000
+    :ensure-equal t
+    :forms (("ts-incf" (let ((ts (ts-now)))
+                         (ts-incf (ts-dom ts) 5)
+                         (ts-format nil ts)))
+            ("ts-incf*" (let ((ts (ts-now)))
+                          (ts-incf (ts-dom ts) 5)
+                          (ts-format nil ts)))))
+#+END_SRC
+
+#+RESULTS:
+| Form     | x faster than next |       Total runtime | # of GCs | Total GC runtime |
+|----------+--------------------+---------------------+----------+------------------|
+| ts-incf  | 1.00               |         0.119002497 |        0 |              0.0 |
+| ts-incf* | slowest            | 0.11907886200000001 |        0 |              0.0 |
+
+** Making a new ts vs. blanking fields
+
+Interestingly, not only is making a new ts faster, but it causes less GC!
+
+#+BEGIN_SRC elisp
+  (let* ((a (ts-now)))
+    (bench-multi :times 100000
+      :ensure-equal t
+      :forms (("New" (let ((ts (copy-ts a)))
+                       (setq ts (ts-fill ts))
+                       (make-ts :unix (ts-unix ts))))
+              ("Blanking" (let ((ts (copy-ts a)))
+                            (setq ts (ts-fill ts))
+                            (ts-reset ts))))))
+#+END_SRC
+
+#+RESULTS:
+| Form     | x faster than next | Total runtime | # of GCs |  Total GC runtime |
+|----------+--------------------+---------------+----------+-------------------|
+| New      | 1.16               |  16.022026285 |       37 |  7.72851086399999 |
+| Blanking | slowest            |  18.664577402 |       42 | 8.754392806999988 |
+
+** ~ts-inc~ vs. ~ts-incf~ vs. ~cl-incf~ vs...
+
+~ts-inc~ does more work than ~cl-incf~, so it should be slower.  But with ~cl-incf~ we have to call ~ts-fill~ and ~ts-update~ manually.
+
+Note: We call ~ts-format~ to ensure that each form is returning the same thing, because e.g. ~ts-inc~ returns the timestamp, while ~ts-incf~ returns the new slot value.
+
+#+BEGIN_SRC elisp
+  (let ((ts (ts-now)))
+    (bench-multi :times 1000 :ensure-equal t
+      :forms (("ts-inc" (->> (copy-ts ts)
+                             (ts-inc 'hour 72)
+                             (ts-inc 'minute 10)
+                             (ts-format nil)))
+              ("ts-incf" (let ((ts (copy-ts ts)))
+                           (ts-incf (ts-hour ts) 72)
+                           (ts-incf (ts-minute ts) 10)
+                           (ts-format nil ts)))
+              ("cl-incf" (let ((ts (copy-ts ts)))
+                           (setq ts (ts-fill ts))
+                           (cl-incf (ts-hour ts) 72)
+                           (cl-incf (ts-minute ts) 10)
+                           (setq ts (ts-update ts))
+                           (ts-format nil ts)))
+              ("ts-adjust" (let ((ts (copy-ts ts)))
+                             (ts-format nil (ts-adjust 'hour 72 'minute 10 ts))))
+              ("ts-adjustf" (let ((ts (copy-ts ts)))
+                              (ts-format nil (ts-adjustf ts 'hour 72 'minute 10))))
+              ("manually-expanded ts-adjustf w/accessors"
+               (let ((ts (ts-fill (copy-ts ts))) )
+                 (cl-incf (ts-hour ts) 72)
+                 (cl-incf (ts-minute ts) 10)
+                 (setq ts (ts-update ts))
+                 (ts-format nil ts)))
+              ("manually-expanded ts-adjustf w/cl-struct-slot-value"
+               (let ((ts (copy-ts ts)))
+                 (ts-format nil (let ((g3706 (ts-fill ts)))
+                                  (cl-incf (cl-struct-slot-value 'ts 'hour g3706) 72)
+                                  (cl-incf (cl-struct-slot-value 'ts 'minute g3706) 10)
+                                  (setf ts (make-ts :unix (ts-unix (ts-update g3706)))))))))))
+#+END_SRC
+
+#+RESULTS:
+| Form                                                | x faster than next |       Total runtime | # of GCs | Total GC runtime |
+|-----------------------------------------------------+--------------------+---------------------+----------+------------------|
+| ts-adjustf                                          |               1.00 |         0.118524905 |        0 |              0.0 |
+| cl-incf                                             |               1.00 |         0.118892374 |        0 |              0.0 |
+| manually-expanded ts-adjustf w/accessors            |               1.08 |         0.118896395 |        0 |              0.0 |
+| manually-expanded ts-adjustf w/cl-struct-slot-value |               1.11 |         0.127937998 |        0 |              0.0 |
+| ts-adjust                                           |               1.47 | 0.14162766400000001 |        0 |              0.0 |
+| ts-incf                                             |               1.00 |         0.208026902 |        0 |              0.0 |
+| ts-inc                                              |            slowest |         0.208248724 |        0 |              0.0 |
+
+~cl-struct-slot-value~ seems a bit slower than calling accessors.  I understand why this is so in non-byte-compiled code, but it's defined with ~define-inline~, and its comments say that the byte-compiler resolves the array positions at compile time, so it seems like it ought to be just as fast as calling the accessors.
+
+** ~ts-adjust~ vs ~ts-inc~ vs ~ts-adjustf~ for only one adjustment
+
+#+BEGIN_SRC elisp
+  (let ((ts (ts-now)))
+    (bench-multi :times 1000 :ensure-equal t
+      :forms (("ts-inc" (->> (copy-ts ts)
+                             (ts-inc 'hour 72)
+                             (ts-format nil)))
+              ("ts-adjust" (let ((ts (copy-ts ts)))
+                             (ts-format nil (ts-adjust 'hour 72 ts))))
+              ("ts-adjustf" (let ((ts (copy-ts ts)))
+                              (ts-adjustf ts 'hour 72)
+                              (ts-format nil ts))))))
+#+END_SRC
+
+#+RESULTS:
+| Form       | x faster than next |       Total runtime | # of GCs | Total GC runtime |
+|------------+--------------------+---------------------+----------+------------------|
+| ts-adjustf |               1.10 |         0.115363916 |        0 |              0.0 |
+| ts-inc     |               1.06 |           0.1265937 |        0 |              0.0 |
+| ts-adjust  |            slowest | 0.13443148200000002 |        0 |              0.0 |
