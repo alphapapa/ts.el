@@ -840,3 +840,4 @@ Note: We call ~ts-format~ to ensure that each form is returning the same thing, 
 | ts-adjustf |               1.10 |         0.115363916 |        0 |              0.0 |
 | ts-inc     |               1.06 |           0.1265937 |        0 |              0.0 |
 | ts-adjust  |            slowest | 0.13443148200000002 |        0 |              0.0 |
+

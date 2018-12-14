@@ -128,16 +128,16 @@ slot `year' and alias `y' would create an alias `ts-y')."
           :aliases (sec S)
           :constructor "%S"
           :type integer)
-  (dom nil
+  (day nil
        :accessor-init (string-to-number (format-time-string "%d" (ts-unix struct)))
-       :aliases (d)
+       :aliases (day-of-month-num dom d)
        :constructor "%d"
        :type integer)
-  (moy nil
-       :accessor-init (string-to-number (format-time-string "%m" (ts-unix struct)))
-       :aliases (m month-of-year)
-       :constructor "%m"
-       :type integer)
+  (month nil
+         :accessor-init (string-to-number (format-time-string "%m" (ts-unix struct)))
+         :aliases (month-num moy m)
+         :constructor "%m"
+         :type integer)
   (year nil
         :accessor-init (string-to-number (format-time-string "%Y" (ts-unix struct)))
         :aliases (Y)
@@ -146,16 +146,16 @@ slot `year' and alias `y' would create an alias `ts-y')."
 
   (dow nil
        :accessor-init (string-to-number (format-time-string "%w" (ts-unix struct)))
-       :aliases (day-of-week)
+       :aliases (day-of-week-num)
        :constructor "%w"
        :type integer)
-  (day nil
-       :accessor-init (format-time-string "%a" (ts-unix struct))
-       :aliases (day-abbr)
-       :constructor "%a")
-  (day-full nil
+  (day-abbr nil
+            :accessor-init (format-time-string "%a" (ts-unix struct))
+            :aliases (day-of-week-abbr)
+            :constructor "%a")
+  (day-name nil
             :accessor-init (format-time-string "%A" (ts-unix struct))
-            :aliases (day-name)
+            :aliases (day-of-week-name)
             :constructor "%A")
   ;; (doe nil
   ;;      :accessor-init (days-between (format-time-string "%Y-%m-%d 00:00:00" (ts-unix struct))
@@ -173,14 +173,13 @@ slot `year' and alias `y' would create an alias `ts-y')."
        :constructor "%V"
        :type integer)
 
-  (mon nil
-       :accessor-init (format-time-string "%b" (ts-unix struct))
-       :aliases (month-abbr)
-       :constructor "%b")
-  (month nil
-         :accessor-init (format-time-string "%B" (ts-unix struct))
-         :aliases (month-name)
-         :constructor "%B")
+  (month-abbr nil
+              :accessor-init (format-time-string "%b" (ts-unix struct))
+              :constructor "%b")
+  (month-name nil
+              :accessor-init (format-time-string "%B" (ts-unix struct))
+              :aliases (month-name)
+              :constructor "%B")
 
   (tz-abbr nil
            :accessor-init (format-time-string "%Z" (ts-unix struct))
@@ -193,9 +192,9 @@ slot `year' and alias `y' would create an alias `ts-y')."
   (internal nil
             :accessor-init (apply #'encode-time (decode-time (ts-unix struct))))
   (unix nil
-        :accessor-init (pcase-let* (((cl-struct ts second minute hour dom moy year) cl-x))
-                         (if (and second minute hour dom moy year)
-                             (float-time (encode-time second minute hour dom moy year))
+        :accessor-init (pcase-let* (((cl-struct ts second minute hour day month year) cl-x))
+                         (if (and second minute hour day month year)
+                             (float-time (encode-time second minute hour day month year))
                            (float-time)))))
 
 ;;;; Functions
@@ -228,8 +227,8 @@ If TS is nil, use the current time."
   "Return timestamp TS after updating its Unix timestamp from its other slots.
 Non-destructive.  To be used after setting slots with,
 e.g. `ts-fill'."
-  (pcase-let* (((cl-struct ts second minute hour dom moy year) ts))
-    (make-ts :unix (float-time (encode-time second minute hour dom moy year)))))
+  (pcase-let* (((cl-struct ts second minute hour day month year) ts))
+    (make-ts :unix (float-time (encode-time second minute hour day month year)))))
 
 (defmacro ts-define-fill ()
   "Define `ts-fill' function that fills all applicable slots of `ts' object from its `unix' slot."
