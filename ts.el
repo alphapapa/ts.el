@@ -218,15 +218,14 @@ slot `year' and alias `y' would create an alias `ts-y')."
   "Return `ts' struct set to now."
   (make-ts :unix (float-time)))
 
-(cl-defun ts-format (format-string &optional ts)
+(defun ts-format (format-string &optional ts)
   "Format timestamp TS with `format-time-string' according to FORMAT-STRING."
-  ;; `cl-defmethod' can't handle an optional typed argument, so we use `defun' instead.
   (format-time-string (or format-string ts-default-format)
                       (if ts
                           (ts-unix ts)
                         (ts-unix (ts-now)))))
 
-(cl-defmethod ts-update ((ts ts))
+(defun ts-update (ts)
   "Return timestamp TS after updating its Unix timestamp from its other slots.
 To be used after setting slots."
   (pcase-let* (((cl-struct ts second minute hour dom moy year) ts))
@@ -234,7 +233,7 @@ To be used after setting slots."
     ts))
 
 (defmacro ts-define-fill ()
-  "Define `ts-fill' method that fills all applicable slots of `ts' object from its `unix' slot."
+  "Define `ts-fill' function that fills all applicable slots of `ts' object from its `unix' slot."
   (let* ((slots (->> (cl-struct-slot-info 'ts)
                      (--select (and (not (member (car it) '(unix internal cl-tag-slot)))
                                     (plist-get (cddr it) :constructor)))
@@ -261,12 +260,12 @@ If FORCE is non-nil, update already-filled slots."
 (ts-define-fill)
 
 (defmacro ts-define-reset ()
-  "Define `ts-reset' method that resets all applicable slots of `ts' object from its `unix' slot."
+  "Define `ts-reset' function that resets all applicable slots of `ts' object from its `unix' slot."
   ;; MAYBE: Just make a new ts object, copying the unix slot.
   (let ((slots (->> (cl-struct-slot-info 'ts)
                     (-map #'car)
                     (--select (not (member it '(unix internal cl-tag-slot)))))))
-    `(cl-defmethod ts-reset ((ts ts))
+    `(defun ts-reset (ts)
        "Reset all slots of timestamp TS except `unix'.
 Allows the slots to be recomputed after updating `unix'."
        ,@(cl-loop for slot in slots
@@ -278,9 +277,32 @@ Allows the slots to be recomputed after updating `unix'."
 ;; FIXME: This fails, and I'm not sure if it's a limitation of gvs or if I did something wrong:
 ;;   (ts-incf (ts-moy (ts-now)))
 
+(defun ts-adjust (period ts)
+  "Adjust timestamp TS by PERIOD and return TS.
+PERIOD should be understood by `org-read-date', e.g. \"+1d\"."
+  ;; FIXME: `org-read-date' doesn't accept very many formats.  Should either write our own version
+  ;; or use GNU date.
+  (cl-incf (ts-unix ts) (ts-period-secs period))
+  ts)
+
+(defun ts-period-secs (period)
+  "Return seconds represented by PERIOD.
+PERIOD should be understood by `org-read-date'."
+  ;; FIXME: This gives inconsistent results.  I guess we'll have to calculate it another way.
+  (let* ((future-time (float-time (org-read-date nil t period))))
+    (- future-time (float-time))))
+
+(defun ts-difference (a b)
+  "Return difference between timestamps A and B."
+  (- (ts-unix a) (ts-unix b)))
+
+;;;;; Generalized variables
+
 ;; These incf and decf functions are very cool, and they may make the adjust function unnecessary,
 ;; because you can do something like (ts-incf (ts-moy ts) 120) and the timestamp is set to 10 years
 ;; in the future.
+
+;;  TODO: Look at `cl-incf' implementation, consider whether we should imitate it.
 
 (cl-defmacro ts-incf (field &optional (value 1))
   "Increment timestamp FIELD by VALUE (default 1) and update Unix timestamp."
@@ -300,45 +322,26 @@ Allows the slots to be recomputed after updating `unix'."
        (ts-update ,(cadr field))
        (ts-reset ,(cadr field)))))
 
-(cl-defmethod ts-adjust (period (ts ts))
-  "Adjust timestamp TS by PERIOD and return TS.
-PERIOD should be understood by `org-read-date', e.g. \"+1d\"."
-  ;; FIXME: `org-read-date' doesn't accept very many formats.  Should either write our own version
-  ;; or use GNU date.
-  (cl-incf (ts-unix ts) (ts-period-secs period))
-  ts)
-
-(defun ts-period-secs (period)
-  "Return seconds represented by PERIOD.
-PERIOD should be understood by `org-read-date'."
-  ;; FIXME: This gives inconsistent results.  I guess we'll have to calculate it another way.
-  (let* ((future-time (float-time (org-read-date nil t period))))
-    (- future-time (float-time))))
-
-(cl-defmethod ts-difference ((a ts) (b ts))
-  "Return difference between timestamps A and B."
-  (- (ts-unix a) (ts-unix b)))
-
 ;;;;; Comparators
 
-(cl-defmethod ts= ((a ts) (b ts))
+(defun ts= (a b)
   "Return non-nil if timestamp A is the same as timestamp B.
 Compares only the timestamps' `unix' slots."
   (= (ts-unix a) (ts-unix b)))
 
-(cl-defmethod ts< ((a ts) (b ts))
+(defun ts< (a b)
   "Return non-nil if timestamp A is less than timestamp B."
   (< (ts-unix a) (ts-unix b)))
 
-(cl-defmethod ts<= ((a ts) (b ts))
+(defun ts<= (a b)
   "Return non-nil if timestamp A is <= timestamp B."
   (<= (ts-unix a) (ts-unix b)))
 
-(cl-defmethod ts> ((a ts) (b ts))
+(defun ts> (a b)
   "Return non-nil if timestamp A is greater than timestamp B."
   (> (ts-unix a) (ts-unix b)))
 
-(cl-defmethod ts>= ((a ts) (b ts))
+(defun ts>= (a b)
   "Return non-nil if timestamp A is >= timestamp B."
   (>= (ts-unix a) (ts-unix b)))
 
