@@ -345,16 +345,16 @@ to 47 hours into the future:
   ;; MAYBE: Is it possible to make this kind of macro work in a threading macro by taking its TS
   ;; argument last?  It only seems to work if the TS is a symbol rather than a form, because of how
   ;; generalized variables work, but that makes it less useful and more error-prone.
-  (cl-flet ((accessor (slot) (intern (concat "ts-" (symbol-name (cadr slot))))))
-    ;; We use the accessor functions rather than `cl-struct-slot-value', because it's slightly
-    ;; faster to use the accessors, even though `cl-struct-slot-value' is supposed to be
-    ;; byte-compiled to essentially the same thing (although it's possible I'm doing something
-    ;; wrong).
-    `(progn
-       (setf ,ts (ts-fill ,ts))
-       ,@(cl-loop for (slot change) on adjustments by #'cddr
-                  collect `(cl-incf (,(accessor slot) ,ts) ,change))
-       (setf ,ts (ts-update ,ts)))))
+  `(progn
+     ;; We use the accessor functions rather than `cl-struct-slot-value', because it's slightly
+     ;; faster to use the accessors, even though `cl-struct-slot-value' is supposed to be
+     ;; byte-compiled to essentially the same thing (although it's possible I'm doing something
+     ;; wrong).
+     (setf ,ts (ts-fill ,ts))
+     ,@(cl-loop for (slot change) on adjustments by #'cddr
+                for accessor = (intern (concat "ts-" (symbol-name (cadr slot))))
+                collect `(cl-incf (,accessor ,ts) ,change))
+     (setf ,ts (ts-update ,ts))))
 
 (cl-defmacro ts-incf (place &optional (value 1))
   "Increment timestamp PLACE by VALUE (default 1), update its Unix timestamp, and return the new value of PLACE."
