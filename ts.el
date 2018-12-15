@@ -175,10 +175,11 @@ slot `year' and alias `y' would create an alias `ts-y')."
 
   (month-abbr nil
               :accessor-init (format-time-string "%b" (ts-unix struct))
+              :aliases (b)
               :constructor "%b")
   (month-name nil
               :accessor-init (format-time-string "%B" (ts-unix struct))
-              :aliases (month-name)
+              :aliases (B)
               :constructor "%B")
 
   (tz-abbr nil
