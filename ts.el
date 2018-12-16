@@ -281,7 +281,7 @@ If ABBREVIATE is non-nil, return a shorter version, without
 spaces.  This is a simple calculation that does not account for
 leap years, leap seconds, etc."
   (cl-macrolet ((dividef (place divisor)
-                         ;; Divide PLACE by N, set PLACE to the remainder, and return the quotient.
+                         ;; Divide PLACE by DIVISOR, set PLACE to the remainder, and return the quotient.
                          `(prog1 (/ ,place ,divisor)
                             (setf ,place (% ,place ,divisor))))
                 (format> (place)
