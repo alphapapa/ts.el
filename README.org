@@ -50,11 +50,11 @@ Increment the current date:
 What day of the week was 2 days ago?
 
 #+BEGIN_SRC elisp
-  (ts-day-name (ts-adjust 'day -2 (ts-now)))             ;=> "Thursday"
+  (ts-day-name (ts-dec 'day 2 (ts-now)))             ;=> "Thursday"
 
   ;; Or, with threading macros:
-  (thread-last (ts-now) (ts-adjust 'day -2) ts-day-name) ;=> "Thursday"
-  (->> (ts-now) (ts-adjust 'day -2) ts-day-name)         ;=> "Thursday"
+  (thread-last (ts-now) (ts-dec 'day 2) ts-day-name) ;=> "Thursday"
+  (->> (ts-now) (ts-dec 'day 2) ts-day-name)         ;=> "Thursday"
 #+END_SRC
 
 Get timestamp for this time last week:
@@ -74,7 +74,7 @@ Get timestamp for this time last week:
 
   ;; Or confirm by formatting:
   (list :now (ts-format nil)
-        :last-week (ts-format nil (ts-adjust 'day -7 (ts-now))))
+        :last-week (ts-format nil (ts-dec 'day 7 (ts-now))))
   ;;=> (:now "2018-12-08 23:31:37 -0600" :last-week "2018-12-01 23:31:37 -0600")
 #+END_SRC
 
