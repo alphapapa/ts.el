@@ -89,3 +89,10 @@
     (should (eq (ts-H ts) 12))
     (should (eq (ts-M ts) 12))
     (should (eq (ts-S ts) 12))))
+
+(ert-deftest ts-human-duration ()
+  ""
+  (let* ((now (ts-now))
+         (past (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 now))
+         (human-duration (ts-human-duration (ts-difference now past))))
+    (should (equal human-duration "1 years, 35 days, 2 hours, 1 minutes, 5 seconds"))))

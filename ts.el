@@ -274,6 +274,36 @@ Non-destructive.  The same as:
   "Return difference between timestamps A and B."
   (- (ts-unix a) (ts-unix b)))
 
+(cl-defun ts-human-duration (seconds &optional abbreviate)
+  "Return human-formatted string for SECONDS.
+If ABBREVIATE is non-nil, return a shorter version, without
+spaces.  This is a simple calculation that does not account for
+leap years, leap seconds, etc."
+  (cl-macrolet ((dividef (place divisor)
+                         ;; Divide PLACE by N, set PLACE to the remainder, and return the quotient.
+                         `(prog1 (/ ,place ,divisor)
+                            (setf ,place (% ,place ,divisor))))
+                (format> (place)
+                         ;; When PLACE is greater than 0, return formatted string using its symbol name.
+                         `(when (> ,place 0)
+                            (format "%d%s%s" ,place
+                                    (if abbreviate "" " ")
+                                    (if abbreviate
+                                        (substring ,(symbol-name place) 0 1)
+                                      ,(symbol-name place)))))
+                (join-places (&rest places)
+                             ;; Return string joining the names and values of PLACES.
+                             `(->> (list ,@(cl-loop for place in places
+                                                    collect `(format> ,place)))
+                                   -non-nil
+                                   (s-join (if abbreviate "" ", ")))))
+    (let* ((seconds (floor seconds))
+           (years (dividef seconds 31536000))
+           (days (dividef seconds 86400))
+           (hours (dividef seconds 3600))
+           (minutes (dividef seconds 60)))
+      (join-places years days hours minutes seconds))))
+
 ;;;;; Adjustors
 
 ;; These functions are very cool, and they may make the adjust function unnecessary, because you can

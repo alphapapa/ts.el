@@ -841,3 +841,40 @@ Note: We call ~ts-format~ to ensure that each form is returning the same thing, 
 | ts-inc     |               1.06 |           0.1265937 |        0 |              0.0 |
 | ts-adjust  |            slowest | 0.13443148200000002 |        0 |              0.0 |
 
+** Getting quotient and remainder
+
+#+BEGIN_SRC elisp
+  (let ((divisor 31536000)
+        (a 1544930832)
+        (b 15103636150))
+    (bench-multi :times 100000 :ensure-equal t
+      :forms (("Divide and multiply" (let* ((orig-value a)
+                                            (new-value (/ orig-value divisor)))
+                                       (- orig-value (* new-value divisor))))
+              ("Divide and mod" (let* ((orig-value a)
+                                       (new-value (/ orig-value divisor)))
+                                  (% orig-value divisor))))))
+#+END_SRC
+
+#+RESULTS:
+| Form                | x faster than next |        Total runtime | # of GCs | Total GC runtime |
+|---------------------+--------------------+----------------------+----------+------------------|
+| Divide and mod      | 1.15               | 0.020987126999999998 |        0 |              0.0 |
+| Divide and multiply | slowest            |          0.024083734 |        0 |              0.0 |
+
+#+BEGIN_SRC elisp
+  (let*((a 1544930832)
+        (b 15103636150)
+        (diff (- a b)))
+    (bench-multi :times 1000 :ensure-equal t
+      :forms (("ts-human-duration" (ts-human-duration diff))
+              ("ts-human-duration-mod" (ts-human-duration-mod diff)))))
+#+END_SRC
+
+#+RESULTS:
+| Form                  | x faster than next | Total runtime | # of GCs | Total GC runtime |
+|-----------------------+--------------------+---------------+----------+------------------|
+| ts-human-duration-mod | 1.06               |   0.010433296 |        0 |              0.0 |
+| ts-human-duration     | slowest            |   0.011053253 |        0 |              0.0 |
+
+So it's slightly faster to use ~%~ than to calculate the remainder manually.

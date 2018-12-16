@@ -98,6 +98,21 @@ Parse a string into a timestamp object:
   (ts-format nil (ts-parse "sat dec 8 2018 12:12:12"))  ;=> "2018-12-08 12:12:12 -0600"
 #+END_SRC
 
+Format the difference between two timestamps:
+
+#+BEGIN_SRC elisp
+  (ts-human-duration
+   (ts-difference (ts-now)
+                  (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 (ts-now))))
+  ;; => "1 years, 35 days, 2 hours, 1 minutes, 5 seconds"
+
+  (ts-human-duration
+   (ts-difference (ts-now)
+                  (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 (ts-now)))
+   'abbr)
+  ;; => "1y35d2h1m5s"
+#+END_SRC
+
 * License
 
 GPLv3
