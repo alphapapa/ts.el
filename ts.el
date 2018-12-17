@@ -275,16 +275,27 @@ Non-destructive.  The same as:
   "Return difference between timestamps A and B."
   (- (ts-unix a) (ts-unix b)))
 
-(cl-defun ts-human-duration (seconds &optional abbreviate)
-  "Return human-formatted string for SECONDS.
-If ABBREVIATE is non-nil, return a shorter version, without
-spaces.  This is a simple calculation that does not account for
-leap years, leap seconds, etc."
+(cl-defun ts-human-duration (seconds)
+  "Return plist describing duration SECONDS in years, days, hours, minutes, and seconds.
+This is a simple calculation that does not account for leap
+years, leap seconds, etc."
   (cl-macrolet ((dividef (place divisor)
                          ;; Divide PLACE by DIVISOR, set PLACE to the remainder, and return the quotient.
                          `(prog1 (/ ,place ,divisor)
-                            (setf ,place (% ,place ,divisor))))
-                (format> (place)
+                            (setf ,place (% ,place ,divisor)))))
+    (let* ((seconds (floor seconds))
+           (years (dividef seconds 31536000))
+           (days (dividef seconds 86400))
+           (hours (dividef seconds 3600))
+           (minutes (dividef seconds 60)))
+      (list :years years :days days :hours hours :minutes minutes :seconds seconds))))
+
+(cl-defun ts-human-format-duration (seconds &optional abbreviate)
+  "Return human-formatted string describing duration SECONDS.
+If ABBREVIATE is non-nil, return a shorter version, without
+spaces.  This is a simple calculation that does not account for
+leap years, leap seconds, etc."
+  (cl-macrolet ((format> (place)
                          ;; When PLACE is greater than 0, return formatted string using its symbol name.
                          `(when (> ,place 0)
                             (format "%d%s%s" ,place
@@ -298,11 +309,7 @@ leap years, leap seconds, etc."
                                                     collect `(format> ,place)))
                                    -non-nil
                                    (s-join (if abbreviate "" ", ")))))
-    (let* ((seconds (floor seconds))
-           (years (dividef seconds 31536000))
-           (days (dividef seconds 86400))
-           (hours (dividef seconds 3600))
-           (minutes (dividef seconds 60)))
+    (-let* (((&plist :years :days :hours :minutes :seconds) (ts-human-duration seconds)))
       (join-places years days hours minutes seconds))))
 
 ;;;;; Adjustors

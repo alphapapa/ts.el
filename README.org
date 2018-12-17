@@ -60,22 +60,32 @@ What day of the week was 2 days ago?
 Get timestamp for this time last week:
 
 #+BEGIN_SRC elisp
-  (ts-unix (ts-adjust 'day -7 (ts-now))) ;=> 1543728398.0
+  (ts-unix (ts-adjust 'day -7 (ts-now)))
+  ;;=> 1543728398.0
 
   ;; To confirm that the difference really is 7 days:
   (/ (- (ts-unix (ts-now))
         (ts-unix (ts-adjust 'day -7 (ts-now))))
-     86400)  ;=> 7.000000567521762
+     86400)
+  ;;=> 7.000000567521762
 
-  ;; Or human-friendly:
+  ;; Or human-friendly as a list:
   (ts-human-duration
    (ts-difference (ts-now)
-                  (ts-dec 'day 7 (ts-now))))  ;=> "7 days"
+                  (ts-dec 'day 7 (ts-now))))
+  ;;=> (:years 0 :days 7 :hours 0 :minutes 0 :seconds 0)
+
+  ;; Or as a string:
+  (ts-human-format-duration
+   (ts-difference (ts-now)
+                  (ts-dec 'day 7 (ts-now))))
+  ;;=> "7 days"
 
   ;; Or confirm by formatting:
   (list :now (ts-format nil)
         :last-week (ts-format nil (ts-dec 'day 7 (ts-now))))
-  ;;=> (:now "2018-12-08 23:31:37 -0600" :last-week "2018-12-01 23:31:37 -0600")
+  ;;=> (:now "2018-12-08 23:31:37 -0600" 
+  ;;   :last-week "2018-12-01 23:31:37 -0600")
 #+END_SRC
 
 Some accessors have aliases similar to ~format-time-string~ constructors:
@@ -111,13 +121,13 @@ Parse a string into a timestamp object:
 Format the difference between two timestamps:
 
 #+BEGIN_SRC elisp
-  (ts-human-duration
+  (ts-human-format-duration
    (ts-difference (ts-now)
                   (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 (ts-now))))
   ;; => "1 years, 35 days, 2 hours, 1 minutes, 5 seconds"
 
   ;; Abbreviated:
-  (ts-human-duration
+  (ts-human-format-duration
    (ts-difference (ts-now)
                   (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 (ts-now)))
    'abbr)
