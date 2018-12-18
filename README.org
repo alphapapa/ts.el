@@ -134,6 +134,21 @@ Format the difference between two timestamps:
   ;; => "1y35d2h1m5s"
 #+END_SRC
 
+Parse an Org timestamp element directly from ~org-element-context~ and find the difference between it and now:
+
+#+BEGIN_SRC elisp
+  (let ((org-ts '(timestamp (:type active
+                                   :raw-value "<2015-09-24 Thu .+1d>"
+                                   :year-start 2015 :month-start 9 :day-start 24
+                                   :hour-start nil :minute-start nil
+                                   :year-end 2015 :month-end 9 :day-end 24
+                                   :hour-end nil :minute-end nil
+                                   :begin 230314 :end 230335 :post-blank 0
+                                   :repeater-type restart :repeater-value 1 :repeater-unit day))))
+    (ts-human-format-duration (ts-difference (ts-now) (ts-parse-org org-ts))))
+  ;;=> "3 years, 86 days, 6 hours, 16 minutes, 10 seconds"
+#+END_SRC
+
 * License
 
 GPLv3

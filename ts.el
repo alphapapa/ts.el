@@ -213,6 +213,21 @@ slot `year' and alias `y' would create an alias `ts-y')."
          float-time
          (make-ts :unix))))
 
+(defsubst ts-parse-org (org-ts)
+  "Return timestamp object for Org timestamp element ORG-TS.
+Element should be like one parsed by `org-element', the first
+element of which is `timestamp'.  Assumes timestamp is not a
+range."
+  ;; I wish `pcase-let*' supported plists, which I guess is to say, I wish `map-elt' supported
+  ;; plists.
+  (setq org-ts (cadr org-ts))
+  (ts-update (make-ts :year (plist-get org-ts :year-start)
+                      :month (plist-get org-ts :month-start)
+                      :day (plist-get org-ts :day-start)
+                      :hour (or (plist-get org-ts :hour-start) 0)
+                      :minute (or (plist-get org-ts :minute-start) 0)
+                      :second 0)))
+
 (defsubst ts-now ()
   "Return `ts' struct set to now."
   (make-ts :unix (float-time)))
