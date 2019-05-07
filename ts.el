@@ -255,7 +255,7 @@ e.g. `ts-fill'."
 
                      (--map (list (intern (concat ":" (symbol-name (car it))))
                                   (cddr it)))))
-         (keywords (-map #'first slots))
+         (keywords (-map #'car slots))
          (constructors (->> slots
                             (--map (plist-get (cadr it) :constructor))
                             -non-nil))
