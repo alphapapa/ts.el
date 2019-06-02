@@ -21,6 +21,10 @@
 
 Unix timestamps, by definition, are in UTC.  We need to ensure that timezones are handled properly when creating timestamps, so that e.g. a timestamp in a non-UTC timezone is converted to UTC when calling ~ts-parse~.
 
+** TODO Address feedback from [[https://www.reddit.com/r/emacs/comments/a4igm5/rfc_tsel_emacs_datetime_library/][Reddit post]]
+
+Chris Wellons gave a lot of good feedback.
+
 * Tools
 
 ** Reset all struct accessors
