@@ -66,47 +66,59 @@ slot `year' and alias `y' would create an alias `ts-y')."
   (declare (indent defun))
   ;; FIXME: Compiler warnings about accessors defined multiple times.  Not sure if we can fix this
   ;; except by ignoring warnings.
-  (let ((struct-name (car args))
-        (struct-slots (cdr args)))
-    `(prog1
-         ,(macroexpand `(cl-defstruct ,struct-name ,@struct-slots))
-       ,@(cl-loop for slot in struct-slots
-                  for pos from 1
-                  when (listp slot)
-                  collect (-let* (((sname sdefault . soptions) slot)
-                                  (accessor-name (intern (concat (symbol-name struct-name) "-" (symbol-name sname))))
-                                  (accessor-docstring (format "Access slot \"%s\" of `%s' struct CL-X."
-                                                              sname struct-name))
-                                  (struct-pred (intern (concat (symbol-name struct-name) "-p")))
-                                  (accessor-init (plist-get soptions :accessor-init))
-                                  (aliases (plist-get soptions :aliases)))
-                            `(progn
-                               ;; Copied from macro expansion of `cl-defstruct'.
-                               (cl-defsubst ,accessor-name (cl-x)
-                                 ,accessor-docstring
-                                 ;; FIXME: side-effect-free is probably not true here, but what about error-free?
-                                 ;;  (declare (side-effect-free error-free))
-                                 (or (,struct-pred cl-x)
-                                     (signal 'wrong-type-argument
-                                             (list ',struct-name cl-x)))
-                                 ,(when accessor-init
-                                    `(unless (aref cl-x ,pos)
-                                       (let ((struct cl-x))
-                                         (aset cl-x ,pos ,accessor-init))))
-                                 ;; NOTE: It's essential that this `aref' form be last so
-                                 ;; the gv-setter works in the compiler macro.
-                                 (aref cl-x ,pos))
-                               ;; Aliases
-                               ,@(cl-loop for alias in aliases
-                                          for alias = (intern (concat (symbol-name struct-name) "-" (symbol-name alias)))
-                                          collect `(defalias ',alias ',accessor-name))
-                               ;; TODO: Setter
-                               ;; ,(when (plist-get soptions :reset)
-                               ;;    `(gv-define-setter ,accessor-name (ts value)
-                               ;;       `(progn
-                               ;;          (aset ,ts ,,pos ,value)
-                               ;;          (setf (ts-unix ts) ni))))
-                               ))))))
+  (let* ((struct-name (car args))
+         (struct-slots (cdr args))
+         (cl-defstruct-expansion (macroexpand `(cl-defstruct ,struct-name ,@struct-slots)))
+         (accessor-forms (cl-loop for slot in struct-slots
+                                  for pos from 1
+                                  when (listp slot)
+                                  collect (-let* (((sname sdefault . soptions) slot)
+                                                  (accessor-name (intern (concat (symbol-name struct-name) "-" (symbol-name sname))))
+                                                  (accessor-docstring (format "Access slot \"%s\" of `%s' struct CL-X."
+                                                                              sname struct-name))
+                                                  (struct-pred (intern (concat (symbol-name struct-name) "-p")))
+                                                  (accessor-init (plist-get soptions :accessor-init))
+                                                  (aliases (plist-get soptions :aliases)))
+                                            ;; Remove accessor forms from `cl-defstruct' expansion.  This may be distasteful,
+                                            ;; but it would seem more distasteful to copy `cl-defstruct' and potentially have
+                                            ;; the implementations diverge in the future when Emacs changes (e.g. the new
+                                            ;; record type).
+                                            (cl-loop for form in-ref cl-defstruct-expansion
+                                                     do (pcase form
+                                                          ((and `(cl-defsubst ,accessor . ,_)
+                                                                (guard (eq accessor accessor-name)))
+                                                           (setf form nil))))
+                                            `(progn
+                                               ;; Define accessor.  Copied from macro expansion of `cl-defstruct'.
+                                               (cl-defsubst ,accessor-name (cl-x)
+                                                 ,accessor-docstring
+                                                 ;; FIXME: side-effect-free is probably not true here, but what about error-free?
+                                                 ;;  (declare (side-effect-free error-free))
+                                                 (or (,struct-pred cl-x)
+                                                     (signal 'wrong-type-argument
+                                                             (list ',struct-name cl-x)))
+                                                 ,(when accessor-init
+                                                    `(unless (aref cl-x ,pos)
+                                                       (let ((struct cl-x))
+                                                         (aset cl-x ,pos ,accessor-init))))
+                                                 ;; NOTE: It's essential that this `aref' form be last so
+                                                 ;; the gv-setter works in the compiler macro.
+                                                 (aref cl-x ,pos))
+
+                                               ;; Aliases
+                                               ,@(cl-loop for alias in aliases
+                                                          for alias = (intern (concat (symbol-name struct-name) "-" (symbol-name alias)))
+                                                          collect `(defalias ',alias ',accessor-name))
+                                               ;; TODO: Setter
+                                               ;; ,(when (plist-get soptions :reset)
+                                               ;;    `(gv-define-setter ,accessor-name (ts value)
+                                               ;;       `(progn
+                                               ;;          (aset ,ts ,,pos ,value)
+                                               ;;          (setf (ts-unix ts) ni))))
+                                               )))))
+    `(progn
+       ,cl-defstruct-expansion
+       ,@accessor-forms)))
 
 ;;;; Structs
 
@@ -257,7 +269,7 @@ e.g. `ts-fill'."
 
                      (--map (list (intern (concat ":" (symbol-name (car it))))
                                   (cddr it)))))
-         (keywords (-map #'first slots))
+         (keywords (-map #'car slots))
          (constructors (->> slots
                             (--map (plist-get (cadr it) :constructor))
                             -non-nil))
