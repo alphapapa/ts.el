@@ -39,6 +39,8 @@
 
 ;;;; Requirements
 
+(require 'cl-lib)
+
 (require 'dash)
 (require 's)
 
