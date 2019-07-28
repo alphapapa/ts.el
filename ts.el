@@ -231,13 +231,19 @@ slot `year' and alias `y' would create an alias `ts-y')."
   "Return `ts' struct set to now."
   (make-ts :unix (float-time)))
 
-(defsubst ts-format (&optional format-string ts)
-  "Format timestamp TS with `format-time-string' according to FORMAT-STRING.
-If FORMAT-STRING is nil, use the value of `ts-default-format'.
-If TS is nil, use the current time."
-  (format-time-string (or format-string ts-default-format)
-                      (when ts
-                        (ts-unix ts))))
+(defsubst ts-format (&optional ts-or-format-string ts)
+  "Format timestamp with `format-time-string'.
+If TS-OR-FORMAT-STRING is a timestamp or nil, use the value of
+`ts-default-format'.  If both TS-OR-FORMAT-STRING and TS are nil,
+use the current time."
+  (cl-etypecase ts-or-format-string
+    (ts (format-time-string ts-default-format (ts-unix ts-or-format-string)))
+    (string (cl-etypecase ts
+              (ts (format-time-string ts-or-format-string (ts-unix ts)))
+              (null (format-time-string ts-or-format-string))))
+    (null (cl-etypecase ts
+            (ts (format-time-string ts-default-format (ts-unix ts)))
+            (null (format-time-string ts-default-format))))))
 
 (defsubst ts-parse (string)
   "Return new `ts' struct, parsing STRING with `parse-time-string'."

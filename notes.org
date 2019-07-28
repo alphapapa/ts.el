@@ -902,3 +902,30 @@ Note: We call ~ts-format~ to ensure that each form is returning the same thing, 
 | ts-human-duration     | slowest            |   0.011053253 |        0 |              0.0 |
 
 So it's slightly faster to use ~%~ than to calculate the remainder manually.
+
+** ~ts-format~ vs. ~ts-format2~
+
+The new one allows more flexible arguments, but may be slower.  Let's find out:
+
+#+BEGIN_SRC elisp
+  (let ((now (ts-now)))
+    (bench-multi-lexical :times 10000
+      :forms (("ts-format" (list (ts-format nil now)
+                                 (ts-format "%Y" now)
+                                 (ts-format "%Y")
+                                 (ts-format nil now)
+                                 (ts-format nil)))
+              ("ts-format2" (list (ts-format2 now)
+                                  (ts-format2 "%Y" now)
+                                  (ts-format2 "%Y")
+                                  (ts-format2 nil now)
+                                  (ts-format2))))))
+#+END_SRC
+
+#+RESULTS:
+| Form       | x faster than next | Total runtime | # of GCs | Total GC runtime |
+|------------+--------------------+---------------+----------+------------------|
+| ts-format  | 1.03               |      1.158207 |        0 |                0 |
+| ts-format2 | slowest            |      1.191369 |        0 |                0 |
+
+It seems to be 2-3% slower, which is about 0.03 seconds across 10,000 iterations.  Should be fine.  Let's do it.

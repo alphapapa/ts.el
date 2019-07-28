@@ -231,8 +231,12 @@
 
 (ert-deftest ts-format ()
   (let ((ts (make-ts :year 2019 :month 7 :day 27 :hour 19 :minute 48 :second 08)))
-    (should (equal "2019-07-27 19:48:08 -0500" (ts-format nil ts)))
-    (should (equal "2019" (ts-format "%Y" ts)))))
+    ;; Following the pattern in the function:
+    (should (equal (ts-format ts) "2019-07-27 19:48:08 -0500"))
+    (should (equal (ts-format "%Y" ts) "2019"))
+    (should (ts-format "%Y"))
+    (should (equal (ts-format nil ts) "2019-07-27 19:48:08 -0500"))
+    (should (ts-format))))
 
 ;;;;; Parsing
 

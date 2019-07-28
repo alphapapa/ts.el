@@ -52,16 +52,16 @@ Increment the current date:
   ;; By 10 years:
   (let ((ts (ts-now)))
     (ts-adjustf ts 'year 10)
-    (list (ts-format nil (ts-now))
-          (ts-format nil ts)))
+    (list (ts-format (ts-now))
+          (ts-format ts)))
   ;; ("2018-12-15 22:00:34 -0600"
   ;;  "2028-12-15 22:00:34 -0600")
 
   ;; By 10 years, 2 months, 3 days, 5 hours, and 4 seconds:
   (let ((ts (ts-now)))
     (ts-adjustf ts 'year 10 'month 2 'day 3 'hour 5 'second 4)
-    (list (ts-format nil (ts-now))
-          (ts-format nil ts)))
+    (list (ts-format (ts-now))
+          (ts-format ts)))
   ;; ("2018-12-15 22:02:31 -0600"
   ;;  "2029-02-19 03:02:35 -0600")
 #+END_SRC
@@ -101,10 +101,10 @@ Get timestamp for this time last week:
   ;;=> "7 days"
 
   ;; Or confirm by formatting:
-  (list :now (ts-format nil)
-        :last-week (ts-format nil (ts-dec 'day 7 (ts-now))))
+  (list :now (ts-format)
+        :last-week (ts-format (ts-dec 'day 7 (ts-now))))
   ;;=> (:now "2018-12-08 23:31:37 -0600" 
-  ;;   :last-week "2018-12-01 23:31:37 -0600")
+  ;;    :last-week "2018-12-01 23:31:37 -0600")
 #+END_SRC
 
 Some accessors have aliases similar to ~format-time-string~ constructors:
@@ -134,12 +134,12 @@ Some accessors have aliases similar to ~format-time-string~ constructors:
 Parse a string into a timestamp object and reformat it:
 
 #+BEGIN_SRC elisp
-  (ts-format nil (ts-parse "sat dec 8 2018 12:12:12"))  ;=> "2018-12-08 12:12:12 -0600"
+  (ts-format (ts-parse "sat dec 8 2018 12:12:12"))  ;=> "2018-12-08 12:12:12 -0600"
 
   ;; With a threading macro:
   (->> "sat dec 8 2018 12:12:12"
        ts-parse
-       (ts-format nil))  ;;=> "2018-12-08 12:12:12 -0600"
+       ts-format)  ;;=> "2018-12-08 12:12:12 -0600"
 #+END_SRC
 
 Format the difference between two timestamps:
@@ -241,8 +241,8 @@ For a more interesting example, what timestamps did the previous week span?
           end (ts-update end))
 
     ;; Finally, format the timestamps.
-    (list :last-week-beg (ts-format nil beg)
-          :last-week-end (ts-format nil end)))  
+    (list :last-week-beg (ts-format beg)
+          :last-week-end (ts-format end)))
 
   ;; This produces:
 
@@ -317,7 +317,7 @@ For a more interesting example, what timestamps did the previous week span?
 
 ** Formatting
 
-+  ~ts-format~ :: ~(&optional FORMAT-STRING TS)~ Format timestamp ~TS~ with ~format-time-string~ according to ~FORMAT-STRING~.  If ~FORMAT-STRING~ is nil, use the value of ~ts-default-format~.  If ~TS~ is nil, use the current time.
++  ~ts-format~ :: ~(&optional TS-OR-FORMAT-STRING TS)~ Format timestamp with ~format-time-string~.  If ~TS-OR-FORMAT-STRING~ is a timestamp or nil, use the value of ~ts-default-format~.  If both ~TS-OR-FORMAT-STRING~ and ~TS~ are nil, use the current time.
 
 ** Parsing
 
