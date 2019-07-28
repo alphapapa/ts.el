@@ -149,6 +149,28 @@ Parse an Org timestamp element directly from ~org-element-context~ and find the 
   ;;=> "3 years, 86 days, 6 hours, 16 minutes, 10 seconds"
 #+END_SRC
 
+Parse an Org timestamp string (which has a repeater) and format the year and month:
+
+#+BEGIN_SRC elisp
+  ;; Note the use of `format' rather than `concat', because `ts-year'
+  ;; returns the year as a number rather than a string.
+
+  (let* ((ts (ts-parse-org "<2015-09-24 Thu .+1d>")))
+    (format "%s, %s" (ts-month-name ts) (ts-year ts)))
+  ;;=> "September, 2015"
+
+  ;; Or, using dash.el:
+
+  (--> (ts-parse-org "<2015-09-24 Thu .+1d>")
+       (format "%s, %s" (ts-month-name it) (ts-year it)))
+  ;;=> "September, 2015"
+
+  ;; Or, if you remember the format specifiers:
+
+  (ts-format "%B, %Y" (ts-parse-org "<2015-09-24 Thu .+1d>"))
+  ;;=> "September, 2015"
+#+END_SRC
+
 * License
 
 GPLv3

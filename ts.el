@@ -280,6 +280,16 @@ range."
                       :minute (or (plist-get org-ts :minute-start) 0)
                       :second 0)))
 
+(declare-function org-parse-time-string "org.el")
+
+(defsubst ts-parse-org (org-ts-string)
+  "Return timestamp object for Org timestamp string ORG-TS-STRING.
+Note that function `org-parse-time-string' is called, which
+should be loaded before calling this function."
+  (pcase-let* ((parsed (org-parse-time-string org-ts-string))
+               (`(,second ,minute ,hour ,day ,month ,year) parsed))
+    (make-ts :second second :minute minute :hour hour :day day :month month :year year)))
+
 ;;;; Functions
 
 (defmacro ts-define-fill ()
