@@ -3,9 +3,7 @@
 
 ~ts~ is a date and time library for Emacs.  It aims to be more convenient than patterns like ~(string-to-number (format-time-string "%Y"))~ by providing easy accessors, like ~(ts-year (ts-now))~.
 
-One of the principles it aims to follow is using unambiguous (or at least, less ambiguous and somewhat intuitive) function names.  For example, ~day~ could mean day-of-the-month as a number, day-of-the-week as a number, day-of-the-week as an abbreviated name, day-of-the-week as a full name, etc.  Instead, we use names like ~dom~ for day-of-the-month as a number (also available as ~d~ for convenience, which corresponds to ~%d~ in ~format-time-string~), ~dow~ for day-of-the-week as a number, ~day~ for day-of-the-week as an abbreviated name, ~day-full~ for day-of-the-week as a full name, etc.
-
-Another feature is that formatted date parts are computed lazily rather than when a timestamp object is instantiated, and the computed parts are then cached for later access without recomputing.  Behind the scenes, this avoids unnecessary ~(string-to-number (format-time-string...~ calls.
+To improve performance (significantly), formatted date parts are computed lazily rather than when a timestamp object is instantiated, and the computed parts are then cached for later access without recomputing.  Behind the scenes, this avoids unnecessary ~(string-to-number (format-time-string...~ calls, which are surprisingly expensive.
 
 * Contents
 :PROPERTIES:
