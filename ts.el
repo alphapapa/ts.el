@@ -265,20 +265,14 @@ e.g. `ts-fill'."
   (pcase-let* (((cl-struct ts second minute hour day month year) ts))
     (make-ts :unix (float-time (encode-time second minute hour day month year)))))
 
-(defsubst ts-parse-org-element (org-ts)
-  "Return timestamp object for Org timestamp element ORG-TS.
+(defsubst ts-parse-org-element (element)
+  "Return timestamp object for Org timestamp element ELEMENT.
 Element should be like one parsed by `org-element', the first
 element of which is `timestamp'.  Assumes timestamp is not a
 range."
-  ;; I wish `pcase-let*' supported plists, which I guess is to say, I wish `map-elt' supported
-  ;; plists.
-  (setq org-ts (cadr org-ts))
-  (ts-update (make-ts :year (plist-get org-ts :year-start)
-                      :month (plist-get org-ts :month-start)
-                      :day (plist-get org-ts :day-start)
-                      :hour (or (plist-get org-ts :hour-start) 0)
-                      :minute (or (plist-get org-ts :minute-start) 0)
-                      :second 0)))
+  (-let (((_ (&keys :year-start :month-start :day-start :hour-start :minute-start)) element))
+    (make-ts :year year-start :month month-start :day day-start
+             :hour (or hour-start 0) :minute (or minute-start 0) :second 0)))
 
 (declare-function org-parse-time-string "org.el")
 
