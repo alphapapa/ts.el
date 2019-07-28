@@ -75,6 +75,78 @@
   (should (equal (floor (ts-unix (ts-now)))
                  (string-to-number (format-time-string "%s")))))
 
+;;;;; Adjustors
+
+;;;;;; Non-destructive
+
+(ert-deftest ts-adjust ()
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (setf ts (ts-adjust 'year 1 ts))
+    (should (equal (ts-year ts) (1+ year))))
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (setf ts (ts-adjust 'year -1 ts))
+    (should (equal (ts-year ts) (1- year)))))
+
+(ert-deftest ts-inc ()
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (setf ts (ts-inc 'year 1 ts))
+    (should (equal (ts-year ts) (1+ year))))
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (setf ts (ts-inc 'year 2 ts))
+    (should (equal (ts-year ts) (+ 2 year)))))
+
+(ert-deftest ts-dec ()
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (setf ts (ts-dec 'year 1 ts))
+    (should (equal (ts-year ts) (1- year))))
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (setf ts (ts-dec 'year 2 ts))
+    (should (equal (ts-year ts) (- year 2)))))
+
+;;;;;; Destructive
+
+(ert-deftest ts-adjustf ()
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (ts-adjustf ts 'year 1)
+    (should (equal (ts-year ts) (1+ year))))
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (ts-adjustf ts 'year -1)
+    (should (equal (ts-year ts) (1- year))))
+  (let* ((ts (ts-now))
+         (now-unix (ts-unix ts)))
+    (ts-adjustf ts 'hour -1 'day +2)
+    (should (equal (floor (ts-unix ts))
+                   (floor (+ now-unix
+                             (* 60 60 47)))))))
+
+(ert-deftest ts-incf ()
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (ts-incf (ts-year ts))
+    (should (equal (ts-year ts) (1+ year))))
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (ts-incf (ts-year ts) 2)
+    (should (equal (ts-year ts) (+ 2 year)))))
+
+(ert-deftest ts-decf ()
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (ts-decf (ts-year ts))
+    (should (equal (ts-year ts) (1- year))))
+  (let* ((ts (ts-now))
+         (year (ts-year ts)))
+    (ts-decf (ts-year ts) 2)
+    (should (equal (ts-year ts) (- year 2)))))
+
 ;;;;; Comparators
 
 (ert-deftest ts= ()
@@ -219,34 +291,7 @@
     (should (or (equal 31536000 (floor (ts-difference ts one-year-ago)))
                 (equal 31622399 (floor (ts-difference ts one-year-ago)))))))
 
-(ert-deftest ts-adjust ()
-  "Test `ts-adjust'."
-  (let* ((ts (ts-now))
-         (year (ts-year ts)))
-    (setf ts (ts-adjust 'year 1 ts))
-    (should (equal (ts-year ts) (1+ year)))))
 
-(ert-deftest ts-incf ()
-  ""
-  (let* ((ts (ts-now))
-         (year (ts-year ts)))
-    (ts-incf (ts-year ts))
-    (should (equal (ts-year ts) (1+ year))))
-  (let* ((ts (ts-now))
-         (year (ts-year ts)))
-    (ts-incf (ts-year ts) 2)
-    (should (equal (ts-year ts) (+ 2 year)))))
-
-(ert-deftest ts-decf ()
-  ""
-  (let* ((ts (ts-now))
-         (year (ts-year ts)))
-    (ts-decf (ts-year ts))
-    (should (equal (ts-year ts) (1- year))))
-  (let* ((ts (ts-now))
-         (year (ts-year ts)))
-    (ts-decf (ts-year ts) 2)
-    (should (equal (ts-year ts) (- year 2)))))
 
 
 
