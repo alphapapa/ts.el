@@ -274,8 +274,8 @@
 
 (ert-deftest ts-now ()
   "Ensure `ts-now' returns what appears to be the current time."
-  ;; FIXME: This just tests for non-nil.
-  (should (ts-unix (ts-now))))
+  (should (equal (floor (ts-unix (ts-now)))
+                 (floor (string-to-number (format-time-string "%s"))))))
 
 (ert-deftest ts-update ()
   "Test `ts-update'."
