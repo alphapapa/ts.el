@@ -1,3 +1,5 @@
+(require 'ts)
+
 (ert-deftest ts-now ()
   "Ensure `ts-now' returns what appears to be the current time."
   ;; FIXME: This just tests for non-nil.
@@ -9,30 +11,32 @@
   (should (ts-format nil (ts-now))))
 
 (ert-deftest ts-update ()
-  ""
+  "Test `ts-update'."
   (let* ((ts (ts-now))
-         (old-unix (ts-unix ts)))
-    (ts-fill ts)
-    (cl-incf (ts-year ts))
-    (ts-update ts)
-    (should-not (equal old-unix (ts-unix ts)))))
+         (one-year-ago ts))
+    (setf one-year-ago (ts-fill ts))
+    (setf (ts-year one-year-ago) (1- (ts-year one-year-ago)))
+    (setf one-year-ago (ts-update one-year-ago))
+    ;; The difference between the new and old timestamps should be one of
+    ;; these two values, depending on whether a leap day is involved.
+    ;; FIXME: I guess this test will fail if a leap second is involved.  If that
+    ;; ever actually causes the test to fail, it should be easy to fix then.
+    (should (or (equal 31536000 (floor (ts-difference ts one-year-ago)))
+                (equal 31622399 (floor (ts-difference ts one-year-ago)))))))
 
 (ert-deftest ts-adjust ()
-  ""
+  "Test `ts-adjust'."
   (let* ((ts (ts-now))
-         (old-year (ts-year ts)))
-    (ts-adjust "+1y" ts)
-    (ts-fill ts 'force)
-    (should (equal (ts-year ts) (1+ old-year)))))
+         (year (ts-year ts)))
+    (setf ts (ts-adjust 'year 1 ts))
+    (should (equal (ts-year ts) (1+ year)))))
 
 (ert-deftest ts-difference ()
-  ""
+  "Test `ts-difference'."
+  ;; We test the difference by subtracting one day.  This should avoid leap day and leap second issues.
   (let* ((a (ts-now))
-         (b (copy-ts a)))
-    (ts-fill b)
-    (cl-incf (ts-year b))
-    (ts-update b)
-    (ts-difference b a)))
+         (b (ts-adjust 'day -1 a)))
+    (should (equal 86400 (floor (ts-difference a b))))))
 
 (ert-deftest ts-incf ()
   ""
@@ -90,9 +94,9 @@
     (should (eq (ts-M ts) 12))
     (should (eq (ts-S ts) 12))))
 
-(ert-deftest ts-human-duration ()
+(ert-deftest ts-human-format-duration ()
   ""
   (let* ((now (ts-now))
          (past (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 now))
-         (human-duration (ts-human-duration (ts-difference now past))))
+         (human-duration (ts-human-format-duration (ts-difference now past))))
     (should (equal human-duration "1 years, 35 days, 2 hours, 1 minutes, 5 seconds"))))
