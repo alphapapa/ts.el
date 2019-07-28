@@ -274,6 +274,8 @@ range."
     (make-ts :year year-start :month month-start :day day-start
              :hour (or hour-start 0) :minute (or minute-start 0) :second 0)))
 
+;; We don't want to force `org' to load when this library does, so we declare
+;; the function.  Users should load `org' before calling `ts-parse-org'.
 (declare-function org-parse-time-string "org.el")
 
 (defsubst ts-parse-org (org-ts-string)
