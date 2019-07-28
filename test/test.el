@@ -70,6 +70,133 @@
 (ert-deftest ts-tz-abbr ()
   (should (equal (ts-tz-abbr (ts-now))
                  (format-time-string "%Z"))))
+(ert-deftest ts-unix ()
+  ;; Theoretically this test could fail if run extremely close to a second boundary, but it's probably good enough.
+  (should (equal (floor (ts-unix (ts-now)))
+                 (string-to-number (format-time-string "%s")))))
+
+;;;;; Comparators
+
+(ert-deftest ts= ()
+  (let* ((now (ts-now))
+         (b (copy-ts now)))
+    (should (ts= now b)))
+  ;; In this test, A and B are not `ts=' to NOW, because NOW's Unix timestamp is a float, and A
+  ;; and B are created from the timestamp parts, which effectively rounds the timestamp to n.0.
+  ;; So rather than compare the newly created timestamp to NOW, we compare it to a copy of itself.
+  (let* ((now (ts-fill (ts-now)))
+         (a (progn
+              (pcase-let* (((cl-struct ts second minute hour day month year) now))
+                (make-ts :year year :month month :day day :hour hour :minute minute :second second))))
+         (b (copy-ts a)))
+    (should (ts= a b))))
+
+(ert-deftest ts< ()
+  (let (a b)
+    (setq a (ts-now))
+    (sleep-for 1)
+    (setq b (ts-now))
+    (should (ts< a b)))
+  (let* ((now (ts-now))
+         (past (copy-ts now)))
+    (ts-decf (ts-year past))
+    (should (ts< past now))))
+
+(ert-deftest ts<= ()
+  (let (a b)
+    (setq a (ts-now))
+    (sleep-for 1)
+    (setq b (ts-now))
+    (should (ts<= a b)))
+  (let* ((now (ts-now))
+         (past (copy-ts now)))
+    (should (ts<= now past))
+    (ts-decf (ts-year past))
+    (should (ts<= past now))))
+
+(ert-deftest ts> ()
+  (let (a b)
+    (setq a (ts-now))
+    (sleep-for 1)
+    (setq b (ts-now))
+    (should (ts> b a)))
+  (let* ((now (ts-now))
+         (past (copy-ts now)))
+    (ts-decf (ts-year past))
+    (should (ts> now past))))
+
+(ert-deftest ts>= ()
+  (let (a b)
+    (setq a (ts-now))
+    (sleep-for 1)
+    (setq b (ts-now))
+    (should (ts>= b a)))
+  (let* ((now (ts-now))
+         (past (copy-ts now)))
+    (should (ts>= now past))
+    (ts-decf (ts-year past))
+    (should (ts>= now past))))
+
+;;;;; Difference
+
+(ert-deftest ts-difference ()
+  ;; We test the difference by subtracting one day.  This should avoid leap day and leap second issues.
+  (let* ((a (ts-now))
+         (b (ts-adjust 'day -1 a)))
+    (should (equal 86400 (floor (ts-difference a b))))))
+
+;;;;; Duration
+
+(ert-deftest ts-human-format-duration ()
+  (let* ((now (ts-now))
+         (past (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 now))
+         (human-duration (ts-human-format-duration (ts-difference now past))))
+    (should (equal human-duration "1 years, 35 days, 2 hours, 1 minutes, 5 seconds"))))
+
+;;;;; Formatting
+
+(ert-deftest ts-format ()
+  (let ((ts (make-ts :year 2019 :month 7 :day 27 :hour 19 :minute 48 :second 08)))
+    (should (equal "2019-07-27 19:48:08 -0500" (ts-format nil ts)))
+    (should (equal "2019" (ts-format "%Y" ts)))))
+
+;;;;; Parsing
+
+(ert-deftest ts-parse ()
+  (let ((ts (ts-parse "sat 8 dec 2018")))
+    (should (eq (ts-Y ts) 2018))
+    (should (eq (ts-m ts) 12))
+    (should (eq (ts-d ts) 8))
+    (should (eq (ts-dow ts) 6))
+    (should (eq (ts-H ts) 0))
+    (should (eq (ts-M ts) 0))
+    (should (eq (ts-S ts) 0)))
+  (let ((ts (ts-parse "sat 8 dec 2018 12:12:12")))
+    (should (eq (ts-Y ts) 2018))
+    (should (eq (ts-m ts) 12))
+    (should (eq (ts-d ts) 8))
+    (should (eq (ts-dow ts) 6))
+    (should (eq (ts-H ts) 12))
+    (should (eq (ts-M ts) 12))
+    (should (eq (ts-S ts) 12))))
+
+(ert-deftest ts-parse-org ()
+  ;; NOTE: Not sure how to best handle loading `org-parse-time-string'.  Calling (require 'ts)
+  ;; shouldn't cause Org to be loaded, so the user will probably have to do that.
+  (require 'org)
+  (let* ((org-ts-string "<2015-09-24 Thu .+1d>"))
+    (equal 1443070800.0 (ts-unix (ts-parse-org org-ts-string)))))
+
+(ert-deftest ts-parse-org-element ()
+  (let ((org-ts '(timestamp (:type active
+                                   :raw-value "<2015-09-24 Thu .+1d>"
+                                   :year-start 2015 :month-start 9 :day-start 24
+                                   :hour-start nil :minute-start nil
+                                   :year-end 2015 :month-end 9 :day-end 24
+                                   :hour-end nil :minute-end nil
+                                   :begin 230314 :end 230335 :post-blank 0
+                                   :repeater-type restart :repeater-value 1 :repeater-unit day))))
+    (equal 1443070800.0 (ts-unix (ts-parse-org-element org-ts)))))
 
 ;;;;; Other
 
@@ -77,11 +204,6 @@
   "Ensure `ts-now' returns what appears to be the current time."
   ;; FIXME: This just tests for non-nil.
   (should (ts-unix (ts-now))))
-
-(ert-deftest ts-format ()
-  "Ensure `ts-format' formats."
-  ;; FIXME: This just tests for non-nil.
-  (should (ts-format nil (ts-now))))
 
 (ert-deftest ts-update ()
   "Test `ts-update'."
@@ -103,13 +225,6 @@
          (year (ts-year ts)))
     (setf ts (ts-adjust 'year 1 ts))
     (should (equal (ts-year ts) (1+ year)))))
-
-(ert-deftest ts-difference ()
-  "Test `ts-difference'."
-  ;; We test the difference by subtracting one day.  This should avoid leap day and leap second issues.
-  (let* ((a (ts-now))
-         (b (ts-adjust 'day -1 a)))
-    (should (equal 86400 (floor (ts-difference a b))))))
 
 (ert-deftest ts-incf ()
   ""
@@ -133,46 +248,12 @@
     (ts-decf (ts-year ts) 2)
     (should (equal (ts-year ts) (- year 2)))))
 
-;; TODO: Other comparator tests
-
-(ert-deftest ts< ()
-  ""
-  (let (a b)
-    (setq a (ts-now))
-    (sleep-for 1)
-    (setq b (ts-now))
-    (should (ts< a b)))
-  (let* ((now (ts-now))
-         (past (copy-ts now)))
-    (ts-decf (ts-year past))
-    (should (ts< past now))))
 
 
-(ert-deftest ts-parse ()
-  ""
-  (let ((ts (ts-parse "sat 8 dec 2018")))
-    (should (eq (ts-Y ts) 2018))
-    (should (eq (ts-m ts) 12))
-    (should (eq (ts-d ts) 8))
-    (should (eq (ts-dow ts) 6))
-    (should (eq (ts-H ts) 0))
-    (should (eq (ts-M ts) 0))
-    (should (eq (ts-S ts) 0)))
-  (let ((ts (ts-parse "sat 8 dec 2018 12:12:12")))
-    (should (eq (ts-Y ts) 2018))
-    (should (eq (ts-m ts) 12))
-    (should (eq (ts-d ts) 8))
-    (should (eq (ts-dow ts) 6))
-    (should (eq (ts-H ts) 12))
-    (should (eq (ts-M ts) 12))
-    (should (eq (ts-S ts) 12))))
 
-(ert-deftest ts-human-format-duration ()
-  ""
-  (let* ((now (ts-now))
-         (past (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 now))
-         (human-duration (ts-human-format-duration (ts-difference now past))))
-    (should (equal human-duration "1 years, 35 days, 2 hours, 1 minutes, 5 seconds"))))
+
+
+
 
 
 ;;;; Footer
