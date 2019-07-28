@@ -265,7 +265,7 @@ e.g. `ts-fill'."
   (pcase-let* (((cl-struct ts second minute hour day month year) ts))
     (make-ts :unix (float-time (encode-time second minute hour day month year)))))
 
-(defsubst ts-parse-org (org-ts)
+(defsubst ts-parse-org-element (org-ts)
   "Return timestamp object for Org timestamp element ORG-TS.
 Element should be like one parsed by `org-element', the first
 element of which is `timestamp'.  Assumes timestamp is not a

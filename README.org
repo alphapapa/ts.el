@@ -145,7 +145,7 @@ Parse an Org timestamp element directly from ~org-element-context~ and find the 
                                    :hour-end nil :minute-end nil
                                    :begin 230314 :end 230335 :post-blank 0
                                    :repeater-type restart :repeater-value 1 :repeater-unit day))))
-    (ts-human-format-duration (ts-difference (ts-now) (ts-parse-org org-ts))))
+    (ts-human-format-duration (ts-difference (ts-now) (ts-parse-org-element org-ts))))
   ;;=> "3 years, 86 days, 6 hours, 16 minutes, 10 seconds"
 #+END_SRC
 
