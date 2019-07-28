@@ -259,7 +259,7 @@
   ;; shouldn't cause Org to be loaded, so the user will probably have to do that.
   (require 'org)
   (let* ((org-ts-string "<2015-09-24 Thu .+1d>"))
-    (equal 1443070800.0 (ts-unix (ts-parse-org org-ts-string)))))
+    (should (equal 1443070800.0 (ts-unix (ts-parse-org org-ts-string))))))
 
 (ert-deftest ts-parse-org-element ()
   (let ((org-ts '(timestamp (:type active
@@ -270,7 +270,7 @@
                                    :hour-end nil :minute-end nil
                                    :begin 230314 :end 230335 :post-blank 0
                                    :repeater-type restart :repeater-value 1 :repeater-unit day))))
-    (equal 1443070800.0 (ts-unix (ts-parse-org-element org-ts)))))
+    (should (equal 1443070800.0 (ts-unix (ts-parse-org-element org-ts))))))
 
 ;;;;; Other
 
