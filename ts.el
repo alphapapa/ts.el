@@ -225,7 +225,19 @@ slot `year' and alias `y' would create an alias `ts-y')."
                               (float-time (encode-time second minute hour day month year))
                             (float-time)))))
 
-;;;; Functions
+;;;; Substs
+
+(defsubst ts-now ()
+  "Return `ts' struct set to now."
+  (make-ts :unix (float-time)))
+
+(defsubst ts-format (&optional format-string ts)
+  "Format timestamp TS with `format-time-string' according to FORMAT-STRING.
+If FORMAT-STRING is nil, use the value of `ts-default-format'.
+If TS is nil, use the current time."
+  (format-time-string (or format-string ts-default-format)
+                      (when ts
+                        (ts-unix ts))))
 
 (defsubst ts-parse (string)
   "Return new `ts' struct, parsing STRING with `parse-time-string'."
@@ -238,6 +250,20 @@ slot `year' and alias `y' would create an alias `ts-y')."
          (apply #'encode-time)
          float-time
          (make-ts :unix))))
+
+(defsubst ts-reset (ts)
+  "Return TS with all slots cleared except `unix'.
+Non-destructive.  The same as:
+
+    (make-ts :unix (ts-unix ts))"
+  (make-ts :unix (ts-unix ts)))
+
+(defsubst ts-update (ts)
+  "Return timestamp TS after updating its Unix timestamp from its other slots.
+Non-destructive.  To be used after setting slots with,
+e.g. `ts-fill'."
+  (pcase-let* (((cl-struct ts second minute hour day month year) ts))
+    (make-ts :unix (float-time (encode-time second minute hour day month year)))))
 
 (defsubst ts-parse-org (org-ts)
   "Return timestamp object for Org timestamp element ORG-TS.
@@ -254,24 +280,7 @@ range."
                       :minute (or (plist-get org-ts :minute-start) 0)
                       :second 0)))
 
-(defsubst ts-now ()
-  "Return `ts' struct set to now."
-  (make-ts :unix (float-time)))
-
-(defsubst ts-format (&optional format-string ts)
-  "Format timestamp TS with `format-time-string' according to FORMAT-STRING.
-If FORMAT-STRING is nil, use the value of `ts-default-format'.
-If TS is nil, use the current time."
-  (format-time-string (or format-string ts-default-format)
-                      (when ts
-                        (ts-unix ts))))
-
-(defsubst ts-update (ts)
-  "Return timestamp TS after updating its Unix timestamp from its other slots.
-Non-destructive.  To be used after setting slots with,
-e.g. `ts-fill'."
-  (pcase-let* (((cl-struct ts second minute hour day month year) ts))
-    (make-ts :unix (float-time (encode-time second minute hour day month year)))))
+;;;; Functions
 
 (defmacro ts-define-fill ()
   "Define `ts-fill' function that fills all applicable slots of `ts' object from its `unix' slot."
@@ -301,13 +310,6 @@ This is non-destructive."
        (let ((time-values (split-string (format-time-string ,format-string (ts-unix ts)) "\f")))
          (make-ts :unix (ts-unix ts) ,@value-conversions)))))
 (ts-define-fill)
-
-(defsubst ts-reset (ts)
-  "Return TS with all slots cleared except `unix'.
-Non-destructive.  The same as:
-
-    (make-ts :unix (ts-unix ts))"
-  (make-ts :unix (ts-unix ts)))
 
 ;; FIXME: This fails, and I'm not sure if it's a limitation of gvs or if I did something wrong:
 ;;   (ts-incf (ts-moy (ts-now)))
