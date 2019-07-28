@@ -370,6 +370,9 @@ leap years, leap seconds, etc."
 ;; These functions are very cool, and they may make the adjust function unnecessary, because you can
 ;; do something like (ts-adjust 'moy 120 (ts-now)) and get a timestamp 10 years in the future.
 
+;; FIXME: Note that not all slots can be used to adjust the timestamp.
+;; For example, the day-of-week-num slot doesn't have any effect.
+
 ;;;;;; Non-destructive
 
 ;; These non-destructive versions take the slot symbol as an argument and the object last, and they
