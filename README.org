@@ -29,18 +29,22 @@ Here are some examples of what you can do:
 Get parts of the current date:
 
 #+BEGIN_SRC elisp
-  (ts-dow (ts-now))        ;=> 6
-  (ts-day-abbr (ts-now))   ;=> "Sat"
-  (ts-day-name (ts-now))   ;=> "Saturday"
-  (ts-month (ts-now))      ;=> 12
-  (ts-month-abbr (ts-now)) ;=> "Dec"
-  (ts-month-name (ts-now)) ;=> "December"
-  (ts-day (ts-now))        ;=> 8
+  ;; When the current date is 2018-12-08 23:09:14 -0600:
   (ts-year (ts-now))       ;=> 2018
+  (ts-month (ts-now))      ;=> 12
+  (ts-day (ts-now))        ;=> 8
   (ts-hour (ts-now))       ;=> 23
   (ts-minute (ts-now))     ;=> 9
   (ts-second (ts-now))     ;=> 14
   (ts-tz-offset (ts-now))  ;=> "-0600"
+
+  (ts-dow (ts-now))        ;=> 6
+  (ts-day-abbr (ts-now))   ;=> "Sat"
+  (ts-day-name (ts-now))   ;=> "Saturday"
+
+  (ts-month-abbr (ts-now)) ;=> "Dec"
+  (ts-month-name (ts-now)) ;=> "December"
+
   (ts-tz-abbr (ts-now))    ;=> "CST"
 #+END_SRC
 
