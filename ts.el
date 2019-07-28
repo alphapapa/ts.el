@@ -82,7 +82,7 @@ slot `year' and alias `y' would create an alias `ts-y')."
              do (-let* (((slot-name _slot-default . slot-options) slot)
                         ((&keys :accessor-init :accessor-init* :aliases) slot-options)
                         (accessor-name (intern (concat (symbol-name struct-name) "-" (symbol-name slot-name))))
-                        (accessor-docstring (format "Access slot \"%s\" of `%s' struct CL-X."
+                        (accessor-docstring (format "Access slot \"%s\" of `%s' struct STRUCT."
                                                     slot-name struct-name))
                         (struct-pred (intern (concat (symbol-name struct-name) "-p")))
                         ;; Accessor form copied from macro expansion of `cl-defstruct'.
