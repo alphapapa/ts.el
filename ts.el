@@ -463,7 +463,10 @@ to 47 hours into the future:
 
 (defun ts= (a b)
   "Return non-nil if timestamp A is the same as timestamp B.
-Compares only the timestamps' `unix' slots."
+Compares only the timestamps' `unix' slots.  Note that a
+timestamp's Unix slot is a float and may differ by less than one
+second, causing them to be unequal even if all of the formatted
+parts of the timestamp are the same."
   (= (ts-unix a) (ts-unix b)))
 
 (defun ts< (a b)
