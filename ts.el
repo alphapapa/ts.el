@@ -49,7 +49,7 @@
 (defvar ts-default-format "%Y-%m-%d %H:%M:%S %z"
   "Default format for `ts-format'.")
 
-;;;; Functions and Macros
+;;;; Structs
 
 (cl-defmacro ts-defstruct (&rest args)
   "Like `cl-defstruct', but with additional slot options.
@@ -131,8 +131,6 @@ slot `year' and alias `y' would create an alias `ts-y')."
        ,cl-defstruct-expansion
        ,@accessor-init*-forms
        ,@alias-forms)))
-
-;;;; Structs
 
 ;; TODO: When a field is changed, the unix/internal slot needs to be updated.  On the other hand,
 ;; maybe not.  Maybe `ts-adjust' should be the only way to adjust them.  Otherwise, updating the
