@@ -1,11 +1,28 @@
 #+TITLE: ts.el
 #+PROPERTY: LOGGING nil
 
-~ts~ is a date and time library for Emacs.  It's currently in prototype stage.  It aims to be more convenient than patterns like ~(string-to-number (format-time-string "%Y"))~ by providing easy accessors, like ~(ts-year (ts-now))~.
+~ts~ is a date and time library for Emacs.  It aims to be more convenient than patterns like ~(string-to-number (format-time-string "%Y"))~ by providing easy accessors, like ~(ts-year (ts-now))~.
 
 One of the principles it aims to follow is using unambiguous (or at least, less ambiguous and somewhat intuitive) function names.  For example, ~day~ could mean day-of-the-month as a number, day-of-the-week as a number, day-of-the-week as an abbreviated name, day-of-the-week as a full name, etc.  Instead, we use names like ~dom~ for day-of-the-month as a number (also available as ~d~ for convenience, which corresponds to ~%d~ in ~format-time-string~), ~dow~ for day-of-the-week as a number, ~day~ for day-of-the-week as an abbreviated name, ~day-full~ for day-of-the-week as a full name, etc.
 
 Another feature is that formatted date parts are computed lazily rather than when a timestamp object is instantiated, and the computed parts are then cached for later access without recomputing.  Behind the scenes, this avoids unnecessary ~(string-to-number (format-time-string...~ calls.
+
+* Contents
+:PROPERTIES:
+:TOC:      this
+:END:
+  -  [[#examples][Examples]]
+  -  [[#functions][Functions]]
+    -  [[#accessors][Accessors]]
+    -  [[#adjustors][Adjustors]]
+    -  [[#comparators][Comparators]]
+    -  [[#duration][Duration]]
+    -  [[#formatting][Formatting]]
+    -  [[#parsing][Parsing]]
+    -  [[#misc][Misc]]
+  -  [[#macros][Macros]]
+
+* Examples
 
 Here are some examples of what you can do:
 
@@ -171,7 +188,122 @@ Parse an Org timestamp string (which has a repeater) and format the year and mon
   ;;=> "September, 2015"
 #+END_SRC
 
+* Functions
+
+** Accessors
+
++  ~ts-B~ :: ~(STRUCT)~ Access slot "month-name" of ~ts~ struct ~STRUCT~.
++  ~ts-H~ :: ~(STRUCT)~ Access slot "hour" of ~ts~ struct ~STRUCT~.
++  ~ts-M~ :: ~(STRUCT)~ Access slot "minute" of ~ts~ struct ~STRUCT~.
++  ~ts-S~ :: ~(STRUCT)~ Access slot "second" of ~ts~ struct ~STRUCT~.
++  ~ts-Y~ :: ~(STRUCT)~ Access slot "year" of ~ts~ struct ~STRUCT~.
++  ~ts-b~ :: ~(STRUCT)~ Access slot "month-abbr" of ~ts~ struct ~STRUCT~.
++  ~ts-d~ :: ~(STRUCT)~ Access slot "day" of ~ts~ struct ~STRUCT~.
++  ~ts-day~ :: ~(STRUCT)~ Access slot "day" of ~ts~ struct ~STRUCT~.
++  ~ts-day-abbr~ :: ~(STRUCT)~ Access slot "day-abbr" of ~ts~ struct ~STRUCT~.
++  ~ts-day-name~ :: ~(STRUCT)~ Access slot "day-name" of ~ts~ struct ~STRUCT~.
++  ~ts-day-of-month-num~ :: ~(STRUCT)~ Access slot "day" of ~ts~ struct ~STRUCT~.
++  ~ts-day-of-week-abbr~ :: ~(STRUCT)~ Access slot "day-abbr" of ~ts~ struct ~STRUCT~.
++  ~ts-day-of-week-name~ :: ~(STRUCT)~ Access slot "day-name" of ~ts~ struct ~STRUCT~.
++  ~ts-day-of-week-num~ :: ~(STRUCT)~ Access slot "dow" of ~ts~ struct ~STRUCT~.
++  ~ts-day-of-year~ :: ~(STRUCT)~ Access slot "doy" of ~ts~ struct ~STRUCT~.
++  ~ts-dom~ :: ~(STRUCT)~ Access slot "day" of ~ts~ struct ~STRUCT~.
++  ~ts-dow~ :: ~(STRUCT)~ Access slot "dow" of ~ts~ struct ~STRUCT~.
++  ~ts-doy~ :: ~(STRUCT)~ Access slot "doy" of ~ts~ struct ~STRUCT~.
++  ~ts-hour~ :: ~(STRUCT)~ Access slot "hour" of ~ts~ struct ~STRUCT~.
++  ~ts-m~ :: ~(STRUCT)~ Access slot "month" of ~ts~ struct ~STRUCT~.
++  ~ts-min~ :: ~(STRUCT)~ Access slot "minute" of ~ts~ struct ~STRUCT~.
++  ~ts-minute~ :: ~(STRUCT)~ Access slot "minute" of ~ts~ struct ~STRUCT~.
++  ~ts-month~ :: ~(STRUCT)~ Access slot "month" of ~ts~ struct ~STRUCT~.
++  ~ts-month-abbr~ :: ~(STRUCT)~ Access slot "month-abbr" of ~ts~ struct ~STRUCT~.
++  ~ts-month-name~ :: ~(STRUCT)~ Access slot "month-name" of ~ts~ struct ~STRUCT~.
++  ~ts-month-num~ :: ~(STRUCT)~ Access slot "month" of ~ts~ struct ~STRUCT~.
++  ~ts-moy~ :: ~(STRUCT)~ Access slot "month" of ~ts~ struct ~STRUCT~.
++  ~ts-sec~ :: ~(STRUCT)~ Access slot "second" of ~ts~ struct ~STRUCT~.
++  ~ts-second~ :: ~(STRUCT)~ Access slot "second" of ~ts~ struct ~STRUCT~.
++  ~ts-tz-abbr~ :: ~(STRUCT)~ Access slot "tz-abbr" of ~ts~ struct ~STRUCT~.
++  ~ts-tz-offset~ :: ~(STRUCT)~ Access slot "tz-offset" of ~ts~ struct ~STRUCT~.
++  ~ts-unix~ :: ~(STRUCT)~ Access slot "unix" of ~ts~ struct ~STRUCT~.
++  ~ts-week~ :: ~(STRUCT)~ Access slot "woy" of ~ts~ struct ~STRUCT~.
++  ~ts-week-of-year~ :: ~(STRUCT)~ Access slot "woy" of ~ts~ struct ~STRUCT~.
++  ~ts-woy~ :: ~(STRUCT)~ Access slot "woy" of ~ts~ struct ~STRUCT~.
++  ~ts-year~ :: ~(STRUCT)~ Access slot "year" of ~ts~ struct ~STRUCT~.
+
+** Adjustors
+
++  ~ts-adjust~ :: ~(&rest ADJUSTMENTS)~ Return new timestamp having applied ~ADJUSTMENTS~ to ~TS~.  ~ADJUSTMENTS~ should be a series of alternating ~SLOTS~ and ~VALUES~ by which to adjust them.  For example, this form returns a new timestamp that is 47 hours into the future:
+   
+   ~(ts-adjust ’hour -1 ’dow +2 (ts-now))~
+   
+   Since the timestamp argument is last, it’s suitable for use in a threading macro.
++  ~ts-dec~ :: ~(SLOT VALUE TS)~ Return a new timestamp based on ~TS~ with its ~SLOT~ decremented by ~VALUE~.  ~SLOT~ should be specified as a plain symbol, not a keyword.
++  ~ts-inc~ :: ~(SLOT VALUE TS)~ Return a new timestamp based on ~TS~ with its ~SLOT~ incremented by ~VALUE~.  ~SLOT~ should be specified as a plain symbol, not a keyword.
++  ~ts-update~ :: ~(TS)~ Return timestamp ~TS~ after updating its Unix timestamp from its other slots.  Non-destructive.  To be used after setting slots with, e.g. ~ts-fill~.
+
+** Comparators
+
++  ~ts<~ :: ~(A B)~ Return non-nil if timestamp ~A~ is less than timestamp ~B~.
++  ~ts<=~ :: ~(A B)~ Return non-nil if timestamp ~A~ is <= timestamp ~B~.
++  ~ts=~ :: ~(A B)~ Return non-nil if timestamp ~A~ is the same as timestamp ~B~.  Compares only the timestamps’ ~unix~ slots.  Note that a timestamp’s Unix slot is a float and may differ by less than one second, causing them to be unequal even if all of the formatted parts of the timestamp are the same.
++  ~ts>~ :: ~(A B)~ Return non-nil if timestamp ~A~ is greater than timestamp ~B~.
++  ~ts>=~ :: ~(A B)~ Return non-nil if timestamp ~A~ is >= timestamp ~B~.
+
+** Duration
+
++  ~ts-human-duration~ :: ~(SECONDS)~ Return plist describing duration ~SECONDS~ in years, days, hours, minutes, and seconds.  This is a simple calculation that does not account for leap years, leap seconds, etc.
++  ~ts-human-format-duration~ :: ~(SECONDS &optional ABBREVIATE)~ Return human-formatted string describing duration ~SECONDS~.  If ~ABBREVIATE~ is non-nil, return a shorter version, without spaces.  This is a simple calculation that does not account for leap years, leap seconds, etc.
+
+** Formatting
+
++  ~ts-format~ :: ~(&optional FORMAT-STRING TS)~ Format timestamp ~TS~ with ~format-time-string~ according to ~FORMAT-STRING~.  If ~FORMAT-STRING~ is nil, use the value of ~ts-default-format~.  If ~TS~ is nil, use the current time.
+
+** Parsing
+
++  ~ts-parse~ :: ~(STRING)~ Return new ~ts~ struct, parsing ~STRING~ with ~parse-time-string~.
++  ~ts-parse-org~ :: ~(ORG-TS-STRING)~ Return timestamp object for Org timestamp string ~ORG-TS-STRING~.  Note that function ~org-parse-time-string~ is called, which should be loaded before calling this function.
++  ~ts-parse-org-element~ :: ~(ELEMENT)~ Return timestamp object for Org timestamp element ~ELEMENT~.  Element should be like one parsed by ~org-element~, the first element of which is ~timestamp~.  Assumes timestamp is not a range.
+
+** Misc
+
++  ~ts-difference~ :: ~(A B)~ Return difference between timestamps ~A~ and ~B~.
++  ~ts-fill~ :: ~(TS)~ Return ~TS~ having filled all slots from its Unix timestamp.  This is non-destructive.
++  ~ts-now~ :: Return ~ts~ struct set to now.
++  ~ts-p~ :: ~(STRUCT)~
++  ~ts-reset~ :: ~(TS)~ Return ~TS~ with all slots cleared except ~unix~.  Non-destructive.  The same as:
+   
+   ~(make-ts :unix (ts-unix ts))~
+
+* Macros
+:PROPERTIES:
+:TOC:      ignore-children
+:END:
+
+** Adjustors
+
++  ~ts-adjustf~ :: ~(TS &rest ADJUSTMENTS)~ Return timestamp ~TS~ having applied ~ADJUSTMENTS~.  This function is destructive, as it calls ~setf~ on ~TS~.
+   
+   ~ADJUSTMENTS~ should be a series of alternating ~SLOTS~ and ~VALUES~ by which to adjust them.  For example, this form adjusts a timestamp to 47 hours into the future:
+   
+   ~(let ((ts (ts-now))) (ts-adjustf ts ’hour -1 ’dow +2))~
++  ~ts-decf~ :: ~(PLACE &optional (VALUE 1))~ Decrement timestamp ~PLACE~ by ~VALUE~ (default 1), update its Unix timestamp, and return the new value of ~PLACE~.
++  ~ts-incf~ :: ~(PLACE &optional (VALUE 1))~ Increment timestamp ~PLACE~ by ~VALUE~ (default 1), update its Unix timestamp, and return the new value of ~PLACE~.
+
+** Misc
+
++  ~ts-defstruct~ :: ~(&rest ARGS)~ Like ~cl-defstruct~, but with additional slot options.
+   
+   Additional slot options and values:
+   
+   ~:accessor-init~: a sexp that initializes the slot in the accessor if the slot is nil.  The symbol ~struct~ will be bound to the current struct.
+   
+   ~:accessor-init*~: Like ~:accessor-init~, but defines the accessor after the struct is fully defined, so it may refer to the struct definition (e.g. by using the ~cl-defstruct~ ~pcase~ macro).
+   
+   ~:aliases~: ~A~ list of symbols which will be aliased to the slot accessor, prepended with the struct name (e.g. a struct ~ts~ with slot ~year~ and alias ~y~ would create an alias ~ts-y~).
+
 * License
+:PROPERTIES:
+:TOC:      ignore
+:END:
 
 GPLv3
 
