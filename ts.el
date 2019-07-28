@@ -62,7 +62,7 @@ to the current struct.
 
 `:accessor-init*': Like `:accessor-init', but defines the
 accessor after the struct is fully defined, so it may refer to
-the struct definition (e.g. by using the `cl-defstruct' `pcase'
+the struct definition (e.g. by using the `cl-struct' `pcase'
 macro).
 
 `:aliases': A list of symbols which will be aliased to the slot
