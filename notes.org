@@ -25,6 +25,26 @@ Unix timestamps, by definition, are in UTC.  We need to ensure that timezones ar
 
 Chris Wellons gave a lot of good feedback.
 
+* Ideas
+
+** Inc/dec until
+
+Something like this, but easier to use:
+
+#+BEGIN_SRC elisp
+  (cl-loop with ts = (ts-now)
+           while (not (= (ts-dow ts) 6))
+           do (ts-decf (ts-day ts))
+           finally return (ts-format ts))
+  ;;=> "2019-07-27 18:15:12 -0500"
+
+  (cl-loop with ts = (ts-dec 'day 1 (ts-now))
+           while (not (= (ts-dow ts) 0))
+           do (ts-decf (ts-day ts))
+           finally return (ts-format ts))
+  ;;=> "2019-07-21 18:15:17 -0500"
+#+END_SRC
+
 * Tools
 
 ** Reset all struct accessors
