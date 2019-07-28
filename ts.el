@@ -1,6 +1,6 @@
 ;;; ts.el --- Date-time library  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2018 Adam Porter
+;; Copyright (C) 2018-2019 Adam Porter
 
 ;; Author: Adam Porter <adam@alphapapa.net
 ;; URL: http://github.com/alphapapa/ts.el
