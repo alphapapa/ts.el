@@ -1,4 +1,77 @@
+;;; test.el --- Tests for ts.el                      -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2019  Adam Porter
+
+;; Author: Adam Porter <adam@alphapapa.net>
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;;
+
+;;; Code:
+
+;;;; Requirements
+
 (require 'ts)
+
+;;;; Tests
+
+;;;;; Accessors
+
+(ert-deftest ts-dow ()
+  (should (equal (ts-dow (ts-now))
+                 (string-to-number (format-time-string "%w")))))
+(ert-deftest ts-day-abbr ()
+  (should (equal (ts-day-abbr (ts-now))
+                 (format-time-string "%a"))))
+(ert-deftest ts-day-name ()
+  (should (equal (ts-day-name (ts-now))
+                 (format-time-string "%A"))))
+(ert-deftest ts-month ()
+  (should (equal (ts-month (ts-now))
+                 (string-to-number (format-time-string "%m")))))
+(ert-deftest ts-month-abbr ()
+  (should (equal (ts-month-abbr (ts-now))
+                 (format-time-string "%b"))))
+(ert-deftest ts-month-name ()
+  (should (equal (ts-month-name (ts-now))
+                 (format-time-string "%B"))))
+(ert-deftest ts-day ()
+  (should (equal (ts-day (ts-now))
+                 (string-to-number (format-time-string "%d")))))
+(ert-deftest ts-year ()
+  (should (equal (ts-year (ts-now))
+                 (string-to-number (format-time-string "%Y")))))
+(ert-deftest ts-hour ()
+  (should (equal (ts-hour (ts-now))
+                 (string-to-number (format-time-string "%H")))))
+(ert-deftest ts-minute ()
+  (should (equal (ts-minute (ts-now))
+                 (string-to-number (format-time-string "%M")))))
+(ert-deftest ts-second ()
+  (should (equal (ts-second (ts-now))
+                 (string-to-number (format-time-string "%S")))))
+(ert-deftest ts-tz-offset ()
+  (should (equal (ts-tz-offset (ts-now))
+                 (format-time-string "%z"))))
+(ert-deftest ts-tz-abbr ()
+  (should (equal (ts-tz-abbr (ts-now))
+                 (format-time-string "%Z"))))
+
+;;;;; Other
 
 (ert-deftest ts-now ()
   "Ensure `ts-now' returns what appears to be the current time."
@@ -100,3 +173,10 @@
          (past (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 now))
          (human-duration (ts-human-format-duration (ts-difference now past))))
     (should (equal human-duration "1 years, 35 days, 2 hours, 1 minutes, 5 seconds"))))
+
+
+;;;; Footer
+
+(provide 'ts-test)
+
+;;; test.el ends here
