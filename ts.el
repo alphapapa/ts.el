@@ -138,90 +138,90 @@ slot `year' and alias `y' would create an alias `ts-y')."
 ;; worth it.  Or, at least, not in the initial version.
 
 (ts-defstruct ts
-  (hour nil
-        :accessor-init (string-to-number (format-time-string "%H" (ts-unix struct)))
-        :aliases (H)
-        :constructor "%H"
-        :type integer)
-  (minute nil
-          :accessor-init (string-to-number (format-time-string "%M" (ts-unix struct)))
-          :aliases (min M)
-          :constructor "%M"
-          :type integer)
-  (second nil
-          :accessor-init (string-to-number (format-time-string "%S" (ts-unix struct)))
-          :aliases (sec S)
-          :constructor "%S"
-          :type integer)
-  (day nil
-       :accessor-init (string-to-number (format-time-string "%d" (ts-unix struct)))
-       :aliases (day-of-month-num dom d)
-       :constructor "%d"
-       :type integer)
-  (month nil
-         :accessor-init (string-to-number (format-time-string "%m" (ts-unix struct)))
-         :aliases (month-num moy m)
-         :constructor "%m"
-         :type integer)
-  (year nil
-        :accessor-init (string-to-number (format-time-string "%Y" (ts-unix struct)))
-        :aliases (Y)
-        :constructor "%Y"
-        :type integer)
+  (hour
+   nil :accessor-init (string-to-number (format-time-string "%H" (ts-unix struct)))
+   :aliases (H)
+   :constructor "%H"
+   :type integer)
+  (minute
+   nil :accessor-init (string-to-number (format-time-string "%M" (ts-unix struct)))
+   :aliases (min M)
+   :constructor "%M"
+   :type integer)
+  (second
+   nil :accessor-init (string-to-number (format-time-string "%S" (ts-unix struct)))
+   :aliases (sec S)
+   :constructor "%S"
+   :type integer)
+  (day
+   nil :accessor-init (string-to-number (format-time-string "%d" (ts-unix struct)))
+   :aliases (day-of-month-num dom d)
+   :constructor "%d"
+   :type integer)
+  (month
+   nil :accessor-init (string-to-number (format-time-string "%m" (ts-unix struct)))
+   :aliases (month-num moy m)
+   :constructor "%m"
+   :type integer)
+  (year
+   nil :accessor-init (string-to-number (format-time-string "%Y" (ts-unix struct)))
+   :aliases (Y)
+   :constructor "%Y"
+   :type integer)
 
-  (dow nil
-       :accessor-init (string-to-number (format-time-string "%w" (ts-unix struct)))
-       :aliases (day-of-week-num)
-       :constructor "%w"
-       :type integer)
-  (day-abbr nil
-            :accessor-init (format-time-string "%a" (ts-unix struct))
-            :aliases (day-of-week-abbr)
-            :constructor "%a")
-  (day-name nil
-            :accessor-init (format-time-string "%A" (ts-unix struct))
-            :aliases (day-of-week-name)
-            :constructor "%A")
+  (dow
+   nil :accessor-init (string-to-number (format-time-string "%w" (ts-unix struct)))
+   :aliases (day-of-week-num)
+   :constructor "%w"
+   :type integer)
+  (day-abbr
+   nil :accessor-init (format-time-string "%a" (ts-unix struct))
+   :aliases (day-of-week-abbr)
+   :constructor "%a")
+  (day-name
+   nil :accessor-init (format-time-string "%A" (ts-unix struct))
+   :aliases (day-of-week-name)
+   :constructor "%A")
   ;; (doe nil
   ;;      :accessor-init (days-between (format-time-string "%Y-%m-%d 00:00:00" (ts-unix struct))
   ;;                                   "1970-01-01 00:00:00")
   ;;      :aliases (day-of-epoch))
-  (doy nil
-       :accessor-init (string-to-number (format-time-string "%j" (ts-unix struct)))
-       :aliases (day-of-year)
-       :constructor "%j"
-       :type integer)
+  (doy
+   nil :accessor-init (string-to-number (format-time-string "%j" (ts-unix struct)))
+   :aliases (day-of-year)
+   :constructor "%j"
+   :type integer)
 
-  (woy nil
-       :accessor-init (string-to-number (format-time-string "%V" (ts-unix struct)))
-       :aliases (week week-of-year)
-       :constructor "%V"
-       :type integer)
+  (woy
+   nil :accessor-init (string-to-number (format-time-string "%V" (ts-unix struct)))
+   :aliases (week week-of-year)
+   :constructor "%V"
+   :type integer)
 
-  (month-abbr nil
-              :accessor-init (format-time-string "%b" (ts-unix struct))
-              :aliases (b)
-              :constructor "%b")
-  (month-name nil
-              :accessor-init (format-time-string "%B" (ts-unix struct))
-              :aliases (B)
-              :constructor "%B")
+  (month-abbr
+   nil :accessor-init (format-time-string "%b" (ts-unix struct))
+   :aliases (b)
+   :constructor "%b")
+  (month-name
+   nil :accessor-init (format-time-string "%B" (ts-unix struct))
+   :aliases (B)
+   :constructor "%B")
 
-  (tz-abbr nil
-           :accessor-init (format-time-string "%Z" (ts-unix struct))
-           :constructor "%Z")
-  (tz-offset nil
-             :accessor-init (format-time-string "%z" (ts-unix struct))
-             :constructor "%z")
+  (tz-abbr
+   nil :accessor-init (format-time-string "%Z" (ts-unix struct))
+   :constructor "%Z")
+  (tz-offset
+   nil :accessor-init (format-time-string "%z" (ts-unix struct))
+   :constructor "%z")
   ;; MAYBE: Add tz-offset-minutes
 
-  (internal nil
-            :accessor-init (apply #'encode-time (decode-time (ts-unix struct))))
-  (unix nil
-        :accessor-init* (pcase-let* (((cl-struct ts second minute hour day month year) struct))
-                          (if (and second minute hour day month year)
-                              (float-time (encode-time second minute hour day month year))
-                            (float-time)))))
+  (internal
+   nil :accessor-init (apply #'encode-time (decode-time (ts-unix struct))))
+  (unix
+   nil :accessor-init* (pcase-let* (((cl-struct ts second minute hour day month year) struct))
+                         (if (and second minute hour day month year)
+                             (float-time (encode-time second minute hour day month year))
+                           (float-time)))))
 
 ;;;; Substs
 
