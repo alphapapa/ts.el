@@ -265,7 +265,7 @@ Parse an Org timestamp string (which has a repeater) and format the year and mon
 
 ** Misc
 
-+  ~ts-difference~ :: ~(A B)~ Return difference between timestamps ~A~ and ~B~.
++  ~ts-difference~ :: ~(A B)~ Return difference in seconds between timestamps ~A~ and ~B~.
 +  ~ts-fill~ :: ~(TS)~ Return ~TS~ having filled all slots from its Unix timestamp.  This is non-destructive.
 +  ~ts-now~ :: Return ~ts~ struct set to now.
 +  ~ts-p~ :: ~(STRUCT)~

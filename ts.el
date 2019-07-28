@@ -321,7 +321,7 @@ This is non-destructive."
 ;;   (ts-incf (ts-moy (ts-now)))
 
 (defun ts-difference (a b)
-  "Return difference between timestamps A and B."
+  "Return difference in seconds between timestamps A and B."
   (- (ts-unix a) (ts-unix b)))
 
 (cl-defun ts-human-duration (seconds)
