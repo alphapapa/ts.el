@@ -278,7 +278,6 @@
                  (floor (string-to-number (format-time-string "%s"))))))
 
 (ert-deftest ts-update ()
-  "Test `ts-update'."
   (let* ((ts (ts-now))
          (one-year-ago ts))
     (setf one-year-ago (ts-fill ts))
@@ -290,16 +289,6 @@
     ;; ever actually causes the test to fail, it should be easy to fix then.
     (should (or (equal 31536000 (floor (ts-difference ts one-year-ago)))
                 (equal 31622399 (floor (ts-difference ts one-year-ago)))))))
-
-
-
-
-
-
-
-
-
-
 
 ;;;; Footer
 
