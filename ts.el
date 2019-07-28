@@ -60,6 +60,11 @@ Additional slot options and values:
 accessor if the slot is nil.  The symbol `struct' will be bound
 to the current struct.
 
+`:accessor-init*': Like `:accessor-init', but defines the
+accessor after the struct is fully defined, so it may refer to
+the struct definition (e.g. by using the `cl-defstruct' `pcase'
+macro).
+
 `:aliases': A list of symbols which will be aliased to the slot
 accessor, prepended with the struct name (e.g. a struct `ts' with
 slot `year' and alias `y' would create an alias `ts-y')."
@@ -69,56 +74,63 @@ slot `year' and alias `y' would create an alias `ts-y')."
   (let* ((struct-name (car args))
          (struct-slots (cdr args))
          (cl-defstruct-expansion (macroexpand `(cl-defstruct ,struct-name ,@struct-slots)))
-         (accessor-forms (cl-loop for slot in struct-slots
-                                  for pos from 1
-                                  when (listp slot)
-                                  collect (-let* (((sname sdefault . soptions) slot)
-                                                  (accessor-name (intern (concat (symbol-name struct-name) "-" (symbol-name sname))))
-                                                  (accessor-docstring (format "Access slot \"%s\" of `%s' struct CL-X."
-                                                                              sname struct-name))
-                                                  (struct-pred (intern (concat (symbol-name struct-name) "-p")))
-                                                  (accessor-init (plist-get soptions :accessor-init))
-                                                  (aliases (plist-get soptions :aliases)))
-                                            ;; Remove accessor forms from `cl-defstruct' expansion.  This may be distasteful,
-                                            ;; but it would seem more distasteful to copy `cl-defstruct' and potentially have
-                                            ;; the implementations diverge in the future when Emacs changes (e.g. the new
-                                            ;; record type).
-                                            (cl-loop for form in-ref cl-defstruct-expansion
-                                                     do (pcase form
-                                                          ((and `(cl-defsubst ,accessor . ,_)
-                                                                (guard (eq accessor accessor-name)))
-                                                           (setf form nil))))
-                                            `(progn
-                                               ;; Define accessor.  Copied from macro expansion of `cl-defstruct'.
-                                               (cl-defsubst ,accessor-name (cl-x)
-                                                 ,accessor-docstring
-                                                 ;; FIXME: side-effect-free is probably not true here, but what about error-free?
-                                                 ;;  (declare (side-effect-free error-free))
-                                                 (or (,struct-pred cl-x)
-                                                     (signal 'wrong-type-argument
-                                                             (list ',struct-name cl-x)))
-                                                 ,(when accessor-init
-                                                    `(unless (aref cl-x ,pos)
-                                                       (let ((struct cl-x))
-                                                         (aset cl-x ,pos ,accessor-init))))
-                                                 ;; NOTE: It's essential that this `aref' form be last so
-                                                 ;; the gv-setter works in the compiler macro.
-                                                 (aref cl-x ,pos))
-
-                                               ;; Aliases
-                                               ,@(cl-loop for alias in aliases
-                                                          for alias = (intern (concat (symbol-name struct-name) "-" (symbol-name alias)))
-                                                          collect `(defalias ',alias ',accessor-name))
-                                               ;; TODO: Setter
-                                               ;; ,(when (plist-get soptions :reset)
-                                               ;;    `(gv-define-setter ,accessor-name (ts value)
-                                               ;;       `(progn
-                                               ;;          (aset ,ts ,,pos ,value)
-                                               ;;          (setf (ts-unix ts) ni))))
-                                               )))))
+         (accessor-init*-forms)
+         (alias-forms))
+    (cl-loop for slot in struct-slots
+             for pos from 1
+             when (listp slot)
+             do (-let* (((slot-name _slot-default . slot-options) slot)
+                        ((&keys :accessor-init :accessor-init* :aliases) slot-options)
+                        (accessor-name (intern (concat (symbol-name struct-name) "-" (symbol-name slot-name))))
+                        (accessor-docstring (format "Access slot \"%s\" of `%s' struct CL-X."
+                                                    slot-name struct-name))
+                        (struct-pred (intern (concat (symbol-name struct-name) "-p")))
+                        ;; Accessor form copied from macro expansion of `cl-defstruct'.
+                        (accessor-form `(cl-defsubst ,accessor-name (struct)
+                                          ,accessor-docstring
+                                          ;; FIXME: side-effect-free is probably not true here, but what about error-free?
+                                          ;;  (declare (side-effect-free error-free))
+                                          (or (,struct-pred struct)
+                                              (signal 'wrong-type-argument
+                                                      (list ',struct-name struct)))
+                                          ,(when (or accessor-init accessor-init*)
+                                             `(unless (aref struct ,pos)
+                                                (aset struct ,pos ,(or accessor-init accessor-init*))))
+                                          ;; NOTE: It's essential that this `aref' form be last
+                                          ;; so the gv-setter works in the compiler macro.
+                                          (aref struct ,pos))))
+                  (cl-assert (not (and accessor-init accessor-init*))
+                             t "Cannot define both accessor-init and accessor-init* on a slot")
+                  (when accessor-init*
+                    (push accessor-form accessor-init*-forms))
+                  ;; Replace accessor forms from `cl-defstruct' expansion.  This may be distasteful, but
+                  ;; it would seem more distasteful to copy all of `cl-defstruct' and potentially have the
+                  ;; implementations diverge in the future when Emacs changes (e.g. the new record type).
+                  (cl-loop for form in-ref cl-defstruct-expansion
+                           do (pcase form
+                                (`(cl-defsubst ,(and accessor (guard (eq accessor accessor-name)))
+                                      . ,_)
+                                 accessor  ; Silence "unused lexical variable" warning.
+                                 (if accessor-init
+                                     ;; :accessor-init used: define here.
+                                     (setf form accessor-form)
+                                   ;; :accessor-init* used: define later.
+                                   (setf form nil)))))
+                  ;; Alias definitions.
+                  (cl-loop for alias in aliases
+                           for alias-name = (intern (concat (symbol-name struct-name) "-" (symbol-name alias)))
+                           do (push `(defalias ',alias-name ',accessor-name) alias-forms))
+                  ;; TODO: Setter
+                  ;; ,(when (plist-get slot-options :reset)
+                  ;;    `(gv-define-setter ,accessor-name (ts value)
+                  ;;       `(progn
+                  ;;          (aset ,ts ,,pos ,value)
+                  ;;          (setf (ts-unix ts) ni))))
+                  ))
     `(progn
        ,cl-defstruct-expansion
-       ,@accessor-forms)))
+       ,@accessor-init*-forms
+       ,@alias-forms)))
 
 ;;;; Structs
 
@@ -208,10 +220,10 @@ slot `year' and alias `y' would create an alias `ts-y')."
   (internal nil
             :accessor-init (apply #'encode-time (decode-time (ts-unix struct))))
   (unix nil
-        :accessor-init (pcase-let* (((cl-struct ts second minute hour day month year) cl-x))
-                         (if (and second minute hour day month year)
-                             (float-time (encode-time second minute hour day month year))
-                           (float-time)))))
+        :accessor-init* (pcase-let* (((cl-struct ts second minute hour day month year) struct))
+                          (if (and second minute hour day month year)
+                              (float-time (encode-time second minute hour day month year))
+                            (float-time)))))
 
 ;;;; Functions
 
