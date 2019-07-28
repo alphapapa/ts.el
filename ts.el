@@ -392,21 +392,21 @@ threading macro."
          (ts (ts-fill ts)))
     (cl-loop for (slot change) on adjustments by #'cddr
              do (cl-incf (cl-struct-slot-value 'ts slot ts) change))
-    (make-ts :unix (ts-unix (ts-update ts)))))
+    (ts-update ts)))
 
 (defsubst ts-inc (slot value ts)
   "Return a new timestamp based on TS with its SLOT incremented by VALUE.
 SLOT should be specified as a plain symbol, not a keyword."
   (setq ts (ts-fill ts))
   (cl-incf (cl-struct-slot-value 'ts slot ts) value)
-  (make-ts :unix (ts-unix (ts-update ts))))
+  (ts-update ts))
 
 (defsubst ts-dec (slot value ts)
   "Return a new timestamp based on TS with its SLOT decremented by VALUE.
 SLOT should be specified as a plain symbol, not a keyword."
   (setq ts (ts-fill ts))
   (cl-decf (cl-struct-slot-value 'ts slot ts) value)
-  (make-ts :unix (ts-unix (ts-update ts))))
+  (ts-update ts))
 
 ;;;;;; Generalized variables
 
@@ -454,9 +454,7 @@ to 47 hours into the future:
      (prog1
          (cl-incf ,place ,value)
        (setf ,(cadr place)
-             (make-ts :unix (ts-unix
-                             (ts-update
-                              ,(cadr place))))))))
+             (ts-update ,(cadr place))))))
 
 (cl-defmacro ts-decf (place &optional (value 1))
   "Decrement timestamp PLACE by VALUE (default 1), update its Unix timestamp, and return the new value of PLACE."
@@ -465,9 +463,7 @@ to 47 hours into the future:
      (prog1
          (cl-decf ,place ,value)
        (setf ,(cadr place)
-             (make-ts :unix (ts-unix
-                             (ts-update
-                              ,(cadr place))))))))
+             (ts-update ,(cadr place))))))
 
 ;;;;; Comparators
 
