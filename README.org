@@ -129,10 +129,15 @@ Some accessors have aliases similar to ~format-time-string~ constructors:
   (ts-d (ts-now))      ;=> 9
 #+END_SRC
 
-Parse a string into a timestamp object:
+Parse a string into a timestamp object and reformat it:
 
 #+BEGIN_SRC elisp
   (ts-format nil (ts-parse "sat dec 8 2018 12:12:12"))  ;=> "2018-12-08 12:12:12 -0600"
+
+  ;; With a threading macro:
+  (->> "sat dec 8 2018 12:12:12"
+       ts-parse
+       (ts-format nil))  ;;=> "2018-12-08 12:12:12 -0600"
 #+END_SRC
 
 Format the difference between two timestamps:
@@ -154,16 +159,14 @@ Format the difference between two timestamps:
 Parse an Org timestamp element directly from ~org-element-context~ and find the difference between it and now:
 
 #+BEGIN_SRC elisp
-  (let ((org-ts '(timestamp (:type active
-                                   :raw-value "<2015-09-24 Thu .+1d>"
-                                   :year-start 2015 :month-start 9 :day-start 24
-                                   :hour-start nil :minute-start nil
-                                   :year-end 2015 :month-end 9 :day-end 24
-                                   :hour-end nil :minute-end nil
-                                   :begin 230314 :end 230335 :post-blank 0
-                                   :repeater-type restart :repeater-value 1 :repeater-unit day))))
-    (ts-human-format-duration (ts-difference (ts-now) (ts-parse-org-element org-ts))))
-  ;;=> "3 years, 86 days, 6 hours, 16 minutes, 10 seconds"
+  (with-temp-buffer
+    (org-mode)
+    (save-excursion
+      (insert "<2015-09-24 Thu .+1d>"))
+    (ts-human-format-duration
+     (ts-difference (ts-now)
+                    (ts-parse-org-element (org-element-context)))))
+  ;;=> "3 years, 308 days, 2 hours, 24 minutes, 21 seconds"
 #+END_SRC
 
 Parse an Org timestamp string (which has a repeater) and format the year and month:
