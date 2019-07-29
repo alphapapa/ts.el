@@ -288,8 +288,8 @@ range."
   "Return timestamp object for Org timestamp string ORG-TS-STRING.
 Note that function `org-parse-time-string' is called, which
 should be loaded before calling this function."
-  (pcase-let* ((parsed (org-parse-time-string org-ts-string))
-               (`(,second ,minute ,hour ,day ,month ,year) parsed))
+  (pcase-let* ((`(,second ,minute ,hour ,day ,month ,year)
+                (org-parse-time-string org-ts-string)))
     (make-ts :second second :minute minute :hour hour :day day :month month :year year)))
 
 ;;;; Functions
