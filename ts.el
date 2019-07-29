@@ -387,7 +387,7 @@ ADJUSTMENTS should be a series of alternating SLOTS and VALUES by
 which to adjust them.  For example, this form returns a new
 timestamp that is 47 hours into the future:
 
-  (ts-adjust 'hour -1 'dow +2 (ts-now))
+  (ts-adjust 'hour -1 'day +2 (ts-now))
 
 Since the timestamp argument is last, it's suitable for use in a
 threading macro."
@@ -437,7 +437,7 @@ which to adjust them.  For example, this form adjusts a timestamp
 to 47 hours into the future:
 
   (let ((ts (ts-now)))
-    (ts-adjustf ts 'hour -1 'dow +2))"
+    (ts-adjustf ts 'hour -1 'day +2))"
   ;; MAYBE: Is it possible to make this kind of macro work in a threading macro by taking its TS
   ;; argument last?  It only seems to work if the TS is a symbol rather than a form, because of how
   ;; generalized variables work, but that makes it less useful and more error-prone.

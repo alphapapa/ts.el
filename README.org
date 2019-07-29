@@ -296,7 +296,7 @@ For a more interesting example, what timestamps did the previous week span?
 
 +  ~ts-adjust~ :: ~(&rest ADJUSTMENTS)~ Return new timestamp having applied ~ADJUSTMENTS~ to ~TS~.  ~ADJUSTMENTS~ should be a series of alternating ~SLOTS~ and ~VALUES~ by which to adjust them.  For example, this form returns a new timestamp that is 47 hours into the future:
    
-   ~(ts-adjust ’hour -1 ’dow +2 (ts-now))~
+   ~(ts-adjust ’hour -1 ’day +2 (ts-now))~
    
    Since the timestamp argument is last, it’s suitable for use in a threading macro.
 +  ~ts-dec~ :: ~(SLOT VALUE TS)~ Return a new timestamp based on ~TS~ with its ~SLOT~ decremented by ~VALUE~.  ~SLOT~ should be specified as a plain symbol, not a keyword.
@@ -348,7 +348,7 @@ For a more interesting example, what timestamps did the previous week span?
    
    ~ADJUSTMENTS~ should be a series of alternating ~SLOTS~ and ~VALUES~ by which to adjust them.  For example, this form adjusts a timestamp to 47 hours into the future:
    
-   ~(let ((ts (ts-now))) (ts-adjustf ts ’hour -1 ’dow +2))~
+   ~(let ((ts (ts-now))) (ts-adjustf ts ’hour -1 ’day +2))~
 +  ~ts-decf~ :: ~(PLACE &optional (VALUE 1))~ Decrement timestamp ~PLACE~ by ~VALUE~ (default 1), update its Unix timestamp, and return the new value of ~PLACE~.
 +  ~ts-incf~ :: ~(PLACE &optional (VALUE 1))~ Increment timestamp ~PLACE~ by ~VALUE~ (default 1), update its Unix timestamp, and return the new value of ~PLACE~.
 
