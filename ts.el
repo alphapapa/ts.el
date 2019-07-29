@@ -356,7 +356,7 @@ leap years, leap seconds, etc."
                             (format "%d%s%s" ,place
                                     (if abbreviate "" " ")
                                     (if abbreviate
-                                        (substring ,(symbol-name place) 0 1)
+                                        ,(substring (symbol-name place) 0 1)
                                       ,(symbol-name place)))))
                 (join-places (&rest places)
                              ;; Return string joining the names and values of PLACES.
