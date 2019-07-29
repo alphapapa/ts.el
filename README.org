@@ -22,8 +22,6 @@ To improve performance (significantly), formatted date parts are computed lazily
 
 * Examples
 
-Here are some examples of what you can do:
-
 Get parts of the current date:
 
 #+BEGIN_SRC elisp
@@ -50,20 +48,19 @@ Increment the current date:
 
 #+BEGIN_SRC elisp
   ;; By 10 years:
-  (let ((ts (ts-now)))
-    (ts-adjustf ts 'year 10)
-    (list (ts-format (ts-now))
-          (ts-format ts)))
-  ;; ("2018-12-15 22:00:34 -0600"
-  ;;  "2028-12-15 22:00:34 -0600")
+  (list :now (ts-format)
+        :future (ts-format (ts-adjust 'year 10 (ts-now))))
+  ;;=> (   :now "2018-12-15 22:00:34 -0600"
+  ;;    :future "2028-12-15 22:00:34 -0600")
 
   ;; By 10 years, 2 months, 3 days, 5 hours, and 4 seconds:
-  (let ((ts (ts-now)))
-    (ts-adjustf ts 'year 10 'month 2 'day 3 'hour 5 'second 4)
-    (list (ts-format (ts-now))
-          (ts-format ts)))
-  ;; ("2018-12-15 22:02:31 -0600"
-  ;;  "2029-02-19 03:02:35 -0600")
+  (list :now (ts-format)
+        :future (ts-format
+                 (ts-adjust 'year 10 'month 2 'day 3
+                            'hour 5 'second 4
+                            (ts-now))))
+  ;;=> (   :now "2018-12-15 22:02:31 -0600"
+  ;;    :future "2029-02-19 03:02:35 -0600")
 #+END_SRC
 
 What day of the week was 2 days ago?
@@ -103,7 +100,7 @@ Get timestamp for this time last week:
   ;; Or confirm by formatting:
   (list :now (ts-format)
         :last-week (ts-format (ts-dec 'day 7 (ts-now))))
-  ;;=> (:now "2018-12-08 23:31:37 -0600" 
+  ;;=> (      :now "2018-12-08 23:31:37 -0600" 
   ;;    :last-week "2018-12-01 23:31:37 -0600")
 #+END_SRC
 
@@ -147,13 +144,17 @@ Format the difference between two timestamps:
 #+BEGIN_SRC elisp
   (ts-human-format-duration
    (ts-difference (ts-now)
-                  (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 (ts-now))))
+                  (ts-adjust 'day -400
+                             'hour -2 'minute -1 'second -5
+                             (ts-now))))
   ;; => "1 years, 35 days, 2 hours, 1 minutes, 5 seconds"
 
   ;; Abbreviated:
   (ts-human-format-duration
    (ts-difference (ts-now)
-                  (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 (ts-now)))
+                  (ts-adjust 'day -400
+                             'hour -2 'minute -1 'second -5
+                             (ts-now)))
    'abbr)
   ;; => "1y35d2h1m5s"
 #+END_SRC
