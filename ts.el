@@ -330,7 +330,7 @@ This is non-destructive."
   "Return difference in seconds between timestamps A and B."
   (- (ts-unix a) (ts-unix b)))
 
-(cl-defun ts-human-duration (seconds)
+(defun ts-human-duration (seconds)
   "Return plist describing duration SECONDS in years, days, hours, minutes, and seconds.
 This is a simple calculation that does not account for leap
 years, leap seconds, etc."
