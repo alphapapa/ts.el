@@ -51,6 +51,8 @@
 
 ;;;; Structs
 
+;; TODO: Remove :accessor-init*, just define all accessors afterward.
+
 (cl-defmacro ts-defstruct (&rest args)
   "Like `cl-defstruct', but with additional slot options.
 
