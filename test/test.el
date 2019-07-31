@@ -27,6 +27,8 @@
 
 (require 'ts)
 
+(require 'org-element)
+
 ;;;; Tests
 
 ;;;;; Accessors
