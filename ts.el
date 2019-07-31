@@ -331,9 +331,10 @@ This is non-destructive."
   (- (ts-unix a) (ts-unix b)))
 
 (defun ts-human-duration (seconds)
-  "Return plist describing duration SECONDS in years, days, hours, minutes, and seconds.
-This is a simple calculation that does not account for leap
-years, leap seconds, etc."
+  "Return plist describing duration SECONDS.
+List includes years, days, hours, minutes, and seconds.  This is
+a simple calculation that does not account for leap years, leap
+seconds, etc."
   ;; TODO: Add weeks.
   (cl-macrolet ((dividef (place divisor)
                          ;; Divide PLACE by DIVISOR, set PLACE to the remainder, and return the quotient.
