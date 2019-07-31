@@ -334,6 +334,7 @@ This is non-destructive."
   "Return plist describing duration SECONDS in years, days, hours, minutes, and seconds.
 This is a simple calculation that does not account for leap
 years, leap seconds, etc."
+  ;; TODO: Add weeks.
   (cl-macrolet ((dividef (place divisor)
                          ;; Divide PLACE by DIVISOR, set PLACE to the remainder, and return the quotient.
                          `(prog1 (/ ,place ,divisor)
