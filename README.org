@@ -210,7 +210,7 @@ How long ago did the epoch begin?
 
 #+BEGIN_SRC elisp
   (ts-human-format-duration
-   (ts-difference (ts-now) (make-ts :unix 0)))
+   (ts-diff (ts-now) (make-ts :unix 0)))
   ;;=> "49 years, 227 days, 12 hours, 12 minutes, 30 seconds"
 #+END_SRC
 
@@ -351,6 +351,7 @@ For a more interesting example, what timestamps did the previous week span?
 
 +  ~copy-ts (TS)~ :: Return copy of timestamp struct ~TS~.
 +  ~ts-difference (A B)~ :: Return difference in seconds between timestamps ~A~ and ~B~.
++  ~ts-diff~ :: Alias for ~ts-difference~.
 +  ~ts-fill (TS)~ :: Return ~TS~ having filled all slots from its Unix timestamp.  This is non-destructive.
 +  ~ts-now~ :: Return ~ts~ struct set to now.
 +  ~ts-p (STRUCT)~ :: 

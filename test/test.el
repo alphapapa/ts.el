@@ -219,6 +219,12 @@
          (b (ts-adjust 'day -1 a)))
     (should (equal 86400 (floor (ts-difference a b))))))
 
+(ert-deftest ts-diff ()
+  ;; We test the diff by subtracting one day.  This should avoid leap day and leap second issues.
+  (let* ((a (ts-now))
+         (b (ts-adjust 'day -1 a)))
+    (should (equal 86400 (floor (ts-diff a b))))))
+
 ;;;;; Duration
 
 (ert-deftest ts-human-format-duration ()

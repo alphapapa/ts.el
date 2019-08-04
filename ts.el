@@ -344,6 +344,8 @@ This is non-destructive."
   "Return difference in seconds between timestamps A and B."
   (- (ts-unix a) (ts-unix b)))
 
+(defalias 'ts-diff 'ts-difference)
+
 (defun ts-human-duration (seconds)
   "Return plist describing duration SECONDS.
 List includes years, days, hours, minutes, and seconds.  This is
