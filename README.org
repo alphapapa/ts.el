@@ -206,6 +206,14 @@ How long ago was this date in 1970?
   ;;    "49 years, 12 days")
 #+END_SRC
 
+How long ago did the epoch begin?
+
+#+BEGIN_SRC elisp
+  (ts-human-format-duration
+   (ts-difference (ts-now) (make-ts :unix 0)))
+  ;;=> "49 years, 227 days, 12 hours, 12 minutes, 30 seconds"
+#+END_SRC
+
 For a more interesting example, what timestamps did the previous week span?
 
 #+BEGIN_SRC elisp
