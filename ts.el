@@ -342,6 +342,7 @@ This is non-destructive."
 
 (defun ts-difference (a b)
   "Return difference in seconds between timestamps A and B."
+  ;; MAYBE: Use absolute values so arg order doesn't matter.
   (- (ts-unix a) (ts-unix b)))
 
 (defalias 'ts-diff 'ts-difference)
@@ -368,6 +369,7 @@ seconds, etc."
 If ABBREVIATE is non-nil, return a shorter version, without
 spaces.  This is a simple calculation that does not account for
 leap years, leap seconds, etc."
+  ;; FIXME: Doesn't work with negative values, even though `ts-human-duration' does.
   (cl-macrolet ((format> (place)
                          ;; When PLACE is greater than 0, return formatted string using its symbol name.
                          `(when (> ,place 0)
