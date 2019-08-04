@@ -194,6 +194,18 @@ Parse an Org timestamp string (which has a repeater) and format the year and mon
   ;;=> "September, 2015"
 #+END_SRC
 
+How long ago was this date in 1970?
+
+#+BEGIN_SRC elisp
+  (let* ((now (ts-now))
+         (then (ts-apply :year 1970 now)))
+    (list (ts-format then)
+          (ts-human-format-duration
+           (ts-difference now then))))
+  ;;=> ("1970-08-04 07:07:10 -0500"
+  ;;    "49 years, 12 days")
+#+END_SRC
+
 For a more interesting example, what timestamps did the previous week span?
 
 #+BEGIN_SRC elisp
@@ -294,6 +306,7 @@ For a more interesting example, what timestamps did the previous week span?
 
 ** Adjustors
 
++  ~ts-apply (&rest SLOTS TS)~ :: Return new timestamp based on ~TS~ with new slot values.  Fill timestamp slots, overwrite given slot values, and return new timestamp with Unix timestamp value derived from new slot values.  ~SLOTS~ is a list of alternating key-value pairs like that passed to ~make-ts~.
 +  ~ts-adjust (&rest ADJUSTMENTS)~ :: Return new timestamp having applied ~ADJUSTMENTS~ to ~TS~.  ~ADJUSTMENTS~ should be a series of alternating ~SLOTS~ and ~VALUES~ by which to adjust them.  For example, this form returns a new timestamp that is 47 hours into the future:
    
    ~(ts-adjust ’hour -1 ’day +2 (ts-now))~

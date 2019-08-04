@@ -290,6 +290,13 @@
 
 ;;;;; Other
 
+(ert-deftest ts-apply ()
+  (let* ((now (ts-now))
+         (then (ts-apply :year 1970 now))
+         (expected-difference (- (ts-year now) 1970)))
+    (should (= (- (ts-year now) (ts-year then))
+               expected-difference))))
+
 (ert-deftest ts-now ()
   "Ensure `ts-now' returns what appears to be the current time."
   (should (equal (floor (ts-unix (ts-now)))

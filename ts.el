@@ -282,6 +282,31 @@ should be loaded before calling this function."
 
 ;;;; Functions
 
+(cl-defun ts-apply (&rest args)
+  "Return new timestamp based on TS with new slot values.
+Fill timestamp slots, overwrite given slot values, and return new
+timestamp with Unix timestamp value derived from new slot values.
+SLOTS is a list of alternating key-value pairs like that passed
+to `make-ts'."
+  (declare (advertised-calling-convention (&rest slots ts) nil))
+  (-let* (((&keys :second :minute :hour :day :month :year) args)
+          (ts (-last-item args)))
+    ;; MAYBE: Add timezone offset?
+    (setf ts (ts-fill ts))
+    (when second
+      (setf (ts-second ts) second))
+    (when minute
+      (setf (ts-minute ts) minute))
+    (when hour
+      (setf (ts-hour ts) hour))
+    (when day
+      (setf (ts-day ts) day))
+    (when month
+      (setf (ts-month ts) month))
+    (when year
+      (setf (ts-year ts) year))
+    (ts-update ts)))
+
 (defmacro ts-define-fill ()
   "Define `ts-fill' function that fills all applicable slots of `ts' object from its `unix' slot."
   (let* ((slots (->> (cl-struct-slot-info 'ts)
