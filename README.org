@@ -214,6 +214,18 @@ How long ago did the epoch begin?
   ;;=> "49 years, 227 days, 12 hours, 12 minutes, 30 seconds"
 #+END_SRC
 
+In which of the last 100 years was Christmas on a Saturday?
+
+#+BEGIN_SRC elisp
+  (let ((ts (ts-parse "2019-12-25"))
+        (limit (- (ts-year (ts-now)) 100)))
+    (cl-loop while (>= (ts-year ts) limit)
+             when (string= "Saturday" (ts-day-name ts))
+             collect (ts-year ts)
+             do (ts-decf (ts-year ts))))
+  ;;=> (2010 2004 1999 1993 1982 1976 1971 1965 1954 1948 1943 1937 1926 1920)
+#+END_SRC
+
 For a more interesting example, what timestamps did the previous week span?
 
 #+BEGIN_SRC elisp
