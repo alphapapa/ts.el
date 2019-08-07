@@ -238,40 +238,23 @@ For a more interesting example, what timestamps did the previous week span?
          ;; the execution of this code spanned from one day into the next,
          ;; that would cause a wrong result.)
          (now (ts-now))
-         ;; We start the calculation by setting the `beg' and `end' timestamps
-         ;; to the first and last days of the week by calculating the offset
-         ;; using the current day of the week.  Note that the `ts-dow' slot
-         ;; uses the "%w" format specifier, which counts from Sunday to
-         ;; Saturday as a number from 0 to 6.
-         (adjust-beg-by (- (+ 7 (ts-dow now))))
-         (adjust-end-by (- (- 7 (- 6 (ts-dow now)))))
-         ;; `ts-adjust' is non-destructive, returning a new timestamp, so
-         ;; `now' remains unchanged.
-         (beg (ts-adjust 'day adjust-beg-by now))
-         (end (ts-adjust 'day adjust-end-by now)))
-
-    ;; Fill the timestamps, which fills in their hour/minute/second
-    ;; values from the Unix timestamp, so we can adjust them.
-    (setf beg (ts-fill beg)
-          end (ts-fill end))
-
-    ;; Set their hour/minute/second values.
-    (setf (ts-hour beg) 0
-          (ts-minute beg) 0
-          (ts-second beg) 0)
-    (setf (ts-hour end) 23
-          (ts-minute end) 59
-          (ts-second end) 59)
-
-    ;; We could also use a loop to set those values, especially if
-    ;; changing several timestamps in the same way, like:
-
-    ;; (--each '(hour minute second)
-    ;;   (setf (cl-struct-slot-value 'ts it beg) 0))
-
-    ;; Update their Unix timestamps from the new hour/minute/second values.
-    (setf beg (ts-update beg)
-          end (ts-update end))
+         ;; We start by calculating the offsets for the beginning and
+         ;; ending timestamps using the current day of the week.  Note
+         ;; that the `ts-dow' slot uses the "%w" format specifier, which
+         ;; counts from Sunday to Saturday as a number from 0 to 6.
+         (adjust-beg-day (- (+ 7 (ts-dow now))))
+         (adjust-end-day (- (- 7 (- 6 (ts-dow now)))))
+         ;; Make beginning/end timestamps based on `now', with adjusted
+         ;; day and hour/minute/second values.  These functions return
+         ;; new timestamps, so `now' is unchanged.
+         (beg (thread-last now
+                ;; `ts-adjust' makes relative adjustments to timestamps.
+                (ts-adjust 'day adjust-beg-day)
+                ;; `ts-apply' applies absolute values to timestamps.
+                (ts-apply :hour 0 :minute 0 :second 0)))
+         (end (thread-last now
+                (ts-adjust 'day adjust-end-day)
+                (ts-apply :hour 23 :minute 59 :second 59))))
 
     ;; Finally, format the timestamps.
     (list :last-week-beg (ts-format beg)
