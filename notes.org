@@ -929,3 +929,46 @@ The new one allows more flexible arguments, but may be slower.  Let's find out:
 | ts-format2 | slowest            |      1.191369 |        0 |                0 |
 
 It seems to be 2-3% slower, which is about 0.03 seconds across 10,000 iterations.  Should be fine.  Let's do it.
+
+* Examples
+
+More code examples.
+
+** ts-week-span function
+
+#+BEGIN_SRC elisp
+  (defun ts-week-span (ts)
+    "Return a cons (BEG-TS . END-TS) spanning the week containing timestamp TS."
+    (let* (
+           ;; We start by calculating the offsets for the beginning and
+           ;; ending timestamps using the current day of the week. Note
+           ;; that the `ts-dow' slot uses the "%w" format specifier, which
+           ;; counts from Sunday to Saturday as a number from 0 to 6.
+           (adjust-beg-day (- (ts-dow ts)))
+           (adjust-end-day (- 6 (ts-dow ts)))
+           ;; Make beginning/end timestamps based on `ts', with adjusted
+           ;; day and hour/minute/second values. These functions return
+           ;; new timestamps, so `ts' is unchanged.
+           (beg (thread-last ts
+                  ;; `ts-adjust' makes relative adjustments to timestamps.
+                  (ts-adjust 'day adjust-beg-day)
+                  ;; `ts-apply' applies absolute values to timestamps.
+                  (ts-apply :hour 0 :minute 0 :second 0)))
+           (end (thread-last ts
+                  (ts-adjust 'day adjust-end-day)
+                  (ts-apply :hour 23 :minute 59 :second 59))))
+      (cons beg end)))
+
+  (-let* (;; Bind the default format string for `ts-format', so the
+          ;; results are easy to understand.
+          (ts-default-format "%a, %Y-%m-%d %H:%M:%S %z")
+          ((beg . end) (ts-week-span (make-ts :unix 0))))
+    ;; Finally, format the timestamps.
+    (list :epoch-week-beg (ts-format beg)
+          :epoch-week-end (ts-format end)))
+
+  ;; This produces:
+
+  ;;=> (:epoch-week-beg "Sun, 1969-12-28 00:00:00 -0600"
+  ;;    :epoch-week-end "Sat, 1970-01-03 23:59:59 -0600")
+#+END_SRC
