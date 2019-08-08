@@ -375,7 +375,7 @@ For a more interesting example, what timestamps did the previous week span?
    
    Additional slot options and values:
    
-   ~:accessor-init~: a sexp that initializes the slot in the accessor if the slot is nil.  The symbol ~struct~ will be bound to the current struct.
+   ~:accessor-init~: a sexp that initializes the slot in the accessor if the slot is nil.  The symbol ~struct~ will be bound to the current struct.  The accessor is defined after the struct is fully defined, so it may refer to the struct definition (e.g. by using the ~cl-struct~ ~pcase~ macro).
    
    ~:accessor-init*~: Like ~:accessor-init~, but defines the accessor after the struct is fully defined, so it may refer to the struct definition (e.g. by using the ~cl-struct~ ~pcase~ macro).
    

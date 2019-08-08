@@ -58,8 +58,8 @@ Additional slot options and values:
 
 `:accessor-init': a sexp that initializes the slot in the
 accessor if the slot is nil.  The symbol `struct' will be bound
-to the current struct.  The accessor is defined accessor after
-the struct is fully defined, so it may refer to the struct
+to the current struct.  The accessor is defined after the struct
+is fully defined, so it may refer to the struct
 definition (e.g. by using the `cl-struct' `pcase' macro).
 
 `:aliases': A list of symbols which will be aliased to the slot
