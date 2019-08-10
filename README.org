@@ -1,6 +1,8 @@
 #+TITLE: ts.el
 #+PROPERTY: LOGGING nil
 
+[[https://melpa.org/#/ts][file:https://melpa.org/packages/ts-badge.svg]] [[https://stable.melpa.org/#/ts][file:https://stable.melpa.org/packages/ts-badge.svg]]
+
 ~ts~ is a date and time library for Emacs.  It aims to be more convenient than patterns like ~(string-to-number (format-time-string "%Y"))~ by providing easy accessors, like ~(ts-year (ts-now))~.
 
 To improve performance (significantly), formatted date parts are computed lazily rather than when a timestamp object is instantiated, and the computed parts are then cached for later access without recomputing.  Behind the scenes, this avoids unnecessary ~(string-to-number (format-time-string...~ calls, which are surprisingly expensive.
