@@ -1,10 +1,10 @@
-;;; ts.el --- Date-time library  -*- lexical-binding: t; -*-
+;;; ts.el --- Timestamp and date/time library  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2018-2019 Adam Porter
 
 ;; Author: Adam Porter <adam@alphapapa.net
 ;; URL: http://github.com/alphapapa/ts.el
-;; Version: 0.1
+;; Version: 0.2-pre
 ;; Package-Requires: ((emacs "26.1") (dash "2.14.1") (s "1.12.0"))
 ;; Keywords: date time timestamp
 
@@ -12,13 +12,28 @@
 
 ;;; Commentary:
 
-;; This package is designed to ease manipulation of dates, times, and timestamps in Emacs.
+;; This package is designed to ease manipulation of dates, times, and
+;; timestamps in Emacs.
 
-;; A struct `ts' is defined, which represents a timestamp.  All manipulation is done internally
-;; using Unix timestamps.  Accessors are used to retrieve values such as month, day, year, etc. from
-;; a timestamp, and these values are cached in the struct once accessed, to avoid repeatedly having
-;; to call `format-time-string'.  If a slot is modified, the timestamp's internal Unix timestamp
-;; should be updated with `ts-update'.
+;; A struct `ts' is defined, which represents a timestamp.  All
+;; manipulation is done internally using Unix timestamps.  Accessors
+;; are used to retrieve values such as month, day, year, etc. from a
+;; timestamp, and these values are cached in the struct once accessed,
+;; to avoid repeatedly calling `format-time-string', which is
+;; expensive.  Function arguments are designed to work well with the
+;; `thread-last' macro, to make sequential operations easy to follow.
+
+;; The current timestamp is retrieved with `ts-now'.
+
+;; Timestamps are easily modified using `ts-adjust', `ts-apply',
+;; `ts-incf', `ts-dec', etc.
+
+;; Timestamps are parsed and formatted using `ts-parse',
+;; `ts-parse-org', and `ts-format'.
+
+;; Differences and durations are calculated with `ts-diff',
+;; `ts-human-duration', and `ts-human-format-duration'.  Comparisons
+;; are done with `ts<', `ts<=', `ts=', `ts>', and `ts>='.
 
 ;;; License:
 

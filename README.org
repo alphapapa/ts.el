@@ -12,15 +12,15 @@ To improve performance (significantly), formatted date parts are computed lazily
 :TOC:      this
 :END:
   -  [[#examples][Examples]]
-  -  [[#functions][Functions]]
+  -  [[#usage][Usage]]
     -  [[#accessors][Accessors]]
     -  [[#adjustors][Adjustors]]
     -  [[#comparators][Comparators]]
     -  [[#duration][Duration]]
     -  [[#formatting][Formatting]]
     -  [[#parsing][Parsing]]
-    -  [[#misc][Misc]]
-  -  [[#macros][Macros]]
+    -  [[#misc][Misc.]]
+  -  [[#changelog][Changelog]]
 
 * Examples
 
@@ -268,7 +268,7 @@ For a more interesting example, what timestamps did the previous week span?
   ;;    :last-week-end "Sat, 2019-07-27 23:59:59 -0500")
 #+END_SRC
 
-* Functions
+* Usage
 
 ** Accessors
 
@@ -321,6 +321,15 @@ For a more interesting example, what timestamps did the previous week span?
 +  ~ts-inc (SLOT VALUE TS)~ :: Return a new timestamp based on ~TS~ with its ~SLOT~ incremented by ~VALUE~.  ~SLOT~ should be specified as a plain symbol, not a keyword.
 +  ~ts-update (TS)~ :: Return timestamp ~TS~ after updating its Unix timestamp from its other slots.  Non-destructive.  To be used after setting slots with, e.g. ~ts-fill~.
 
+*Destructive*
++  ~ts-adjustf (TS &rest ADJUSTMENTS)~ :: Return timestamp ~TS~ having applied ~ADJUSTMENTS~.  This function is destructive, as it calls ~setf~ on ~TS~.
+   
+   ~ADJUSTMENTS~ should be a series of alternating ~SLOTS~ and ~VALUES~ by which to adjust them.  For example, this form adjusts a timestamp to 47 hours into the future:
+   
+   ~(let ((ts (ts-now))) (ts-adjustf ts ’hour -1 ’day +2))~
++  ~ts-decf (PLACE &optional (VALUE 1))~ :: Decrement timestamp ~PLACE~ by ~VALUE~ (default 1), update its Unix timestamp, and return the new value of ~PLACE~.
++  ~ts-incf (PLACE &optional (VALUE 1))~ :: Increment timestamp ~PLACE~ by ~VALUE~ (default 1), update its Unix timestamp, and return the new value of ~PLACE~.
+
 ** Comparators
 
 +  ~ts< (A B)~ :: Return non-nil if timestamp ~A~ is less than timestamp ~B~.
@@ -344,7 +353,7 @@ For a more interesting example, what timestamps did the previous week span?
 +  ~ts-parse-org (ORG-TS-STRING)~ :: Return timestamp object for Org timestamp string ~ORG-TS-STRING~.  Note that function ~org-parse-time-string~ is called, which should be loaded before calling this function.
 +  ~ts-parse-org-element (ELEMENT)~ :: Return timestamp object for Org timestamp element ~ELEMENT~.  Element should be like one parsed by ~org-element~, the first element of which is ~timestamp~.  Assumes timestamp is not a range.
 
-** Misc
+** Misc.
 
 +  ~copy-ts (TS)~ :: Return copy of timestamp struct ~TS~.
 +  ~ts-difference (A B)~ :: Return difference in seconds between timestamps ~A~ and ~B~.
@@ -356,23 +365,6 @@ For a more interesting example, what timestamps did the previous week span?
    
    ~(make-ts :unix (ts-unix ts))~
 
-* Macros
-:PROPERTIES:
-:TOC:      ignore-children
-:END:
-
-** Adjustors
-
-+  ~ts-adjustf (TS &rest ADJUSTMENTS)~ :: Return timestamp ~TS~ having applied ~ADJUSTMENTS~.  This function is destructive, as it calls ~setf~ on ~TS~.
-   
-   ~ADJUSTMENTS~ should be a series of alternating ~SLOTS~ and ~VALUES~ by which to adjust them.  For example, this form adjusts a timestamp to 47 hours into the future:
-   
-   ~(let ((ts (ts-now))) (ts-adjustf ts ’hour -1 ’day +2))~
-+  ~ts-decf (PLACE &optional (VALUE 1))~ :: Decrement timestamp ~PLACE~ by ~VALUE~ (default 1), update its Unix timestamp, and return the new value of ~PLACE~.
-+  ~ts-incf (PLACE &optional (VALUE 1))~ :: Increment timestamp ~PLACE~ by ~VALUE~ (default 1), update its Unix timestamp, and return the new value of ~PLACE~.
-
-** Misc
-
 +  ~ts-defstruct (&rest ARGS)~ :: Like ~cl-defstruct~, but with additional slot options.
    
    Additional slot options and values:
@@ -380,6 +372,20 @@ For a more interesting example, what timestamps did the previous week span?
    ~:accessor-init~: a sexp that initializes the slot in the accessor if the slot is nil.  The symbol ~struct~ will be bound to the current struct.  The accessor is defined after the struct is fully defined, so it may refer to the struct definition (e.g. by using the ~cl-struct~ ~pcase~ macro).
    
    ~:aliases~: ~A~ list of symbols which will be aliased to the slot accessor, prepended with the struct name (e.g. a struct ~ts~ with slot ~year~ and alias ~y~ would create an alias ~ts-y~).
+
+* Changelog
+:PROPERTIES:
+:TOC:      ignore-children
+:END:
+
+** 0.2-pre
+
+*Documentation*
++  Improve description and commentary.
+
+** 0.1
+
+First tagged release.  Published to MELPA.
 
 * License
 :PROPERTIES:
