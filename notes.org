@@ -17,6 +17,8 @@
 
 * Tasks
 
+** TODO Use [[info:elisp#Defining%20Functions][define-inline]] instead of ~defsubst~
+
 ** TODO Ensure timezones are handled properly
 
 Unix timestamps, by definition, are in UTC.  We need to ensure that timezones are handled properly when creating timestamps, so that e.g. a timestamp in a non-UTC timezone is converted to UTC when calling ~ts-parse~.
