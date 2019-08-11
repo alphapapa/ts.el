@@ -350,7 +350,9 @@ For a more interesting example, what timestamps did the previous week span?
 ** Parsing
 
 +  ~ts-parse (STRING)~ :: Return new ~ts~ struct, parsing ~STRING~ with ~parse-time-string~.
++  ~ts-parse-fill (FILL STRING)~ :: Return new ~ts~ struct, parsing ~STRING~ with ~parse-time-string~. Empty hour/minute/second values are filled according to ~FILL~: if ~begin~, with 0; if ~end~, hour is filled with 23 and minute/second with 59; if nil, an error may be signaled when time values are empty. Note that when ~FILL~ is ~end~, a time value like "12:12" is filled to "12:12:00", not "12:12:59".
 +  ~ts-parse-org (ORG-TS-STRING)~ :: Return timestamp object for Org timestamp string ~ORG-TS-STRING~.  Note that function ~org-parse-time-string~ is called, which should be loaded before calling this function.
++  ~ts-parse-org-fill (FILL ORG-TS-STRING)~ :: Return timestamp object for Org timestamp string ~ORG-TS-STRING~.  Note that function ~org-parse-time-string~ is called, which should be loaded before calling this function.  Hour/minute/second values are filled according to ~FILL~: if ~begin~, with 0; if ~end~, hour is filled with 23 and minute/second with 59.  Note that ~org-parse-time-string~ does not support timestamps that contain seconds.
 +  ~ts-parse-org-element (ELEMENT)~ :: Return timestamp object for Org timestamp element ~ELEMENT~.  Element should be like one parsed by ~org-element~, the first element of which is ~timestamp~.  Assumes timestamp is not a range.
 
 ** Misc.
@@ -379,6 +381,9 @@ For a more interesting example, what timestamps did the previous week span?
 :END:
 
 ** 0.2-pre
+
+*Added*
++  Functions ~ts-parse-fill~ and ~ts-parse-org-fill~.
 
 *Documentation*
 +  Improve description and commentary.

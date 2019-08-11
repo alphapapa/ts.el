@@ -260,6 +260,40 @@ use the current time."
          float-time
          (make-ts :unix))))
 
+(defsubst ts-parse-fill (fill string)
+  "Return new `ts' struct, parsing STRING with `parse-time-string'.
+Empty hour/minute/second values are filled according to FILL: if
+`begin', with 0; if `end', hour is filled with 23 and
+minute/second with 59; if nil, an error may be signaled when time
+values are empty.
+
+Note that when FILL is `end', a time value like \"12:12\" is
+filled to \"12:12:00\", not \"12:12:59\"."
+  (let ((parsed (parse-time-string string)))
+    ;; Fill nil values
+    (pcase-exhaustive fill
+      ('begin (unless (nth 0 parsed)
+                (setf (nth 0 parsed) 0))
+              (unless (nth 1 parsed)
+                (setf (nth 1 parsed) 0))
+              (unless (nth 2 parsed)
+                (setf (nth 2 parsed) 0)))
+      ;; NOTE: When the second value is not present in the string, it's
+      ;; set to 0, even when FILL is `end'.  In a way this seems wrong,
+      ;; but on the other hand, "12:12" as a plain time value is assumed
+      ;; to refer to the moment it becomes 12:12, which means 0 seconds.
+      ('end (unless (nth 0 parsed)
+              (setf (nth 0 parsed) 59))
+            (unless (nth 1 parsed)
+              (setf (nth 1 parsed) 59))
+            (unless (nth 2 parsed)
+              (setf (nth 2 parsed) 23)))
+      (`nil nil))
+    (->> parsed
+         (apply #'encode-time)
+         float-time
+         (make-ts :unix))))
+
 (defsubst ts-reset (ts)
   "Return TS with all slots cleared except `unix'.
 Non-destructive.  The same as:
@@ -293,6 +327,41 @@ Note that function `org-parse-time-string' is called, which
 should be loaded before calling this function."
   (pcase-let* ((`(,second ,minute ,hour ,day ,month ,year)
                 (org-parse-time-string org-ts-string)))
+    (make-ts :second second :minute minute :hour hour :day day :month month :year year)))
+
+(defsubst ts-parse-org-fill (fill org-ts-string)
+  "Return timestamp object for Org timestamp string ORG-TS-STRING.
+Note that function `org-parse-time-string' is called, which
+should be loaded before calling this function.
+Hour/minute/second values are filled according to FILL: if
+`begin', with 0; if `end', hour is filled with 23 and
+minute/second with 59.  Note that `org-parse-time-string' does
+not support timestamps that contain seconds."
+  (pcase-let* ((`(,second ,minute ,hour ,day ,month ,year)
+                (org-parse-time-string org-ts-string 'nodefault)))
+    (pcase-exhaustive fill
+      ('begin (unless second
+                (setf second 0))
+              (unless minute
+                (setf minute 0))
+              (unless hour
+                (setf hour 0)))
+      ('end (if (not (or hour minute))
+                (progn
+                  ;; `hour' and `minute' are nil, so set them and `second'.
+                  ;; `org-parse-time-string' sets the second to 0 even if
+                  ;; NODEFAULT is non-nil.
+                  (setf second 59
+                        minute 59
+                        hour 23))
+              ;; FIXME: Some of these could be omitted.
+              (unless second
+                (setf second 59))
+              (unless minute
+                (setf minute 59))
+              (unless hour
+                (setf hour 23))))
+      ('nil (error "FILL must be `begin' or `end'")))
     (make-ts :second second :minute minute :hour hour :day day :month month :year year)))
 
 ;;;; Functions
