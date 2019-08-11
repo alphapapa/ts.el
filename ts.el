@@ -361,7 +361,7 @@ not support timestamps that contain seconds."
                 (setf minute 59))
               (unless hour
                 (setf hour 23))))
-      ('nil (error "FILL must be `begin' or `end'")))
+      (_ (error "FILL must be `begin' or `end'")))
     (make-ts :second second :minute minute :hour hour :day day :month month :year year)))
 
 ;;;; Functions
