@@ -576,6 +576,12 @@ to 47 hours into the future:
 
 ;;;;; Comparators
 
+(defsubst ts-in (beg end ts)
+  "Return non-nil if TS is within range BEG to END, inclusive.
+All arguments should be `ts' structs."
+  (and (ts<= beg ts)
+       (ts<= ts end)))
+
 (defun ts= (a b)
   "Return non-nil if timestamp A is the same as timestamp B.
 Compares only the timestamps' `unix' slots.  Note that a

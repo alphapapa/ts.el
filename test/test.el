@@ -151,6 +151,16 @@
 
 ;;;;; Comparators
 
+(ert-deftest ts-in ()
+  (let* ((beg (ts-parse "Sun, 2019-08-04 00:00:00 -0500"))
+         (end (ts-parse "Sat, 2019-08-10 23:59:59 -0500"))
+         (check-ts (ts-parse "Fri, 2019-08-09 10:00:34 -0500")))
+    (should (ts-in beg end check-ts)))
+  (let* ((beg (ts-parse "Sun, 2019-08-04 00:00:00 -0500"))
+         (end (ts-parse "Sat, 2019-08-10 23:59:59 -0500"))
+         (check-ts (ts-parse "2017-08-09 10:00:34 -0500")))
+    (should-not (ts-in beg end check-ts))))
+
 (ert-deftest ts= ()
   (let* ((now (ts-now))
          (b (copy-ts now)))
