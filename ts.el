@@ -230,8 +230,10 @@ slot `year' and alias `y' would create an alias `ts-y')."
 
 ;;;; Substs
 
-(defsubst ts-now ()
-  "Return `ts' struct set to now."
+(defun ts-now ()
+  "Return `ts' struct set to now.
+This is a non-inlined function, so it may be rebound, e.g. with
+`cl-letf' for testing."
   (make-ts :unix (float-time)))
 
 (defsubst ts-format (&optional ts-or-format-string ts)

@@ -395,6 +395,9 @@ For a more interesting example, does a timestamp fall within the previous calend
 +  Functions ~ts-parse-fill~ and ~ts-parse-org-fill~.
 +  Function ~ts-in~.
 
+*Changed*
++  Function ~ts-now~ is no longer inlined.  This allows it to be changed at runtime with, e.g. ~cl-letf~, which is helpful in testing.
+
 *Documentation*
 +  Improve description and commentary.
 
