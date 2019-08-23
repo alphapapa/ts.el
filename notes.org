@@ -94,6 +94,32 @@ From the =NEWS= file:
 
 Some of those may be useful.
 
+** TODO Address feedback from Paul Eggert
+
+He was kind enough to post some [[https://lists.gnu.org/archive/html/emacs-devel/2019-08/msg00407.html][feedback]] on the =emacs-devel= list:
+
+#+BEGIN_QUOTE
+I looked briefly at it, and don't see any compatibility issues - not that I understand all the code, which depends on packages I don't use.
+
+The code's comments say that format-time-string is too slow. What performance issues did you run into? At any rate I think you'll find that this:
+
+  (string-to-number (format-time-string "%Y" (ts-unix struct)))
+
+is more efficient written this way:
+
+  (nth 5 (decode-time (ts-unix struct)))
+
+and I expect you can speed up the code further by caching the entire result of decode-time instead of calling format-time-string for each component.
+
+Also, the timestamp functions in Emacs 27 should simplify ts.el, once you can assume Emacs 27. For example, in Emacs 27 you can do something like this:
+
+  (decoded-time-add X (make-decoded-time :year 10))
+
+to add 10 years to a broken-down timestamp X.
+
+One more thing: ts.el's extensive use of float-time is fine for calendrical applications but has limited resolution (2**-22 s or about 2e-7 s for today's timestamps) and so would be problematic for apps requiring higher-resolution timestamps.
+#+END_QUOTE
+
 * Ideas
 
 ** Inc/dec until
