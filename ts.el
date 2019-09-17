@@ -419,7 +419,8 @@ to `make-ts'."
        "Return TS having filled all slots from its Unix timestamp.
 This is non-destructive."
        ;; MAYBE: Use `decode-time' instead of `format-time-string'?  It provides most of the values we need.  Should benchmark.
-       (let ((time-values (split-string (format-time-string ,format-string (ts-unix ts)) "\f")))
+       (let ((time-values (save-match-data
+                            (split-string (format-time-string ,format-string (ts-unix ts)) "\f"))))
          (make-ts :unix (ts-unix ts) ,@value-conversions)))))
 (ts-define-fill)
 

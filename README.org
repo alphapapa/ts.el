@@ -398,6 +398,9 @@ For a more interesting example, does a timestamp fall within the previous calend
 *Changed*
 +  Function ~ts-now~ is no longer inlined.  This allows it to be changed at runtime with, e.g. ~cl-letf~, which is helpful in testing.
 
+*Fixed*
++  Save match data in =ts-fill=.  (Function =split-string=, which is called in it, modifies the match data.)
+
 *Documentation*
 +  Improve description and commentary.
 
