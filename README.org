@@ -400,6 +400,7 @@ For a more interesting example, does a timestamp fall within the previous calend
 
 *Fixed*
 +  Save match data in =ts-fill=.  (Function =split-string=, which is called in it, modifies the match data.)
++  Save match data in =ts-parse-org=.  (Function =org-parse-time-string=, which is called in it, modifies the match data.)
 
 *Documentation*
 +  Improve description and commentary.

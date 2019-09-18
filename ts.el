@@ -328,7 +328,8 @@ range."
 Note that function `org-parse-time-string' is called, which
 should be loaded before calling this function."
   (pcase-let* ((`(,second ,minute ,hour ,day ,month ,year)
-                (org-parse-time-string org-ts-string)))
+                (save-match-data
+                  (org-parse-time-string org-ts-string))))
     (make-ts :second second :minute minute :hour hour :day day :month month :year year)))
 
 (defsubst ts-parse-org-fill (fill org-ts-string)
