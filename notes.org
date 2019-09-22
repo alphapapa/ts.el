@@ -17,6 +17,31 @@
 
 * Tasks
 
+** UNDERWAY Format timestamps into different time zones
+:LOGBOOK:
+-  State "UNDERWAY"   from              [2019-09-22 Sun 08:25]
+:END:
+
+e.g. discussion at https://lists.gnu.org/archive/html/emacs-orgmode/2019-09/msg00197.html
+
+#+BEGIN_SRC elisp
+(let* ((current-offset-secs (ts-tz-offset-secs (ts-now)))
+       (due-at "2019-09-26")
+       (ts-tz (list -14400 "EDT")))
+  (->> due-at
+       ts-parse
+       (ts-apply 'tz-offset-secs current-offset-secs)
+       ts-format))
+
+(let* ((offset-secs (ts-tz-offset-to-seconds "-0400"))
+       (due-at "2019-09-26 00:00")
+       (ts-tz (list offset-secs "EDT")))
+  (->> due-at
+       ts-parse
+       (ts-apply :tz-abbr "EDT" :tz-offset-secs offset-secs)
+       (ts-format "%Y-%m-%d %H:%M:%S %Z")))
+#+END_SRC
+
 ** TODO Use [[info:elisp#Defining%20Functions][define-inline]] instead of ~defsubst~
 
 ** TODO Ensure timezones are handled properly

@@ -64,6 +64,10 @@
 (defvar ts-default-format "%Y-%m-%d %H:%M:%S %z"
   "Default format for `ts-format'.")
 
+(defvar ts-tz nil
+  "Default time zone for `ts-format'.
+The ZONE argument to `format-time-string', which see.")
+
 ;;;; Structs
 
 (cl-defmacro ts-defstruct (&rest args)
@@ -218,17 +222,33 @@ slot `year' and alias `y' would create an alias `ts-y')."
   (tz-offset
    nil :accessor-init (format-time-string "%z" (ts-unix struct))
    :constructor "%z")
+  (tz-offset-secs
+   nil :accessor-init (ts-tz-offset-to-seconds (ts-tz-offset struct)))
   ;; MAYBE: Add tz-offset-minutes
 
   (internal
    nil :accessor-init (apply #'encode-time (decode-time (ts-unix struct))))
   (unix
-   nil :accessor-init (pcase-let* (((cl-struct ts second minute hour day month year) struct))
+   nil :accessor-init (pcase-let* (((cl-struct ts second minute hour day month year tz-abbr tz-offset-secs) struct))
                         (if (and second minute hour day month year)
-                            (float-time (encode-time second minute hour day month year))
+                            (float-time (encode-time second minute hour day month year
+                                                     (when (and tz-offset-secs tz-abbr)
+                                                       (list tz-offset-secs tz-abbr))))
                           (float-time)))))
 
 ;;;; Substs
+
+(defsubst ts-tz-offset-to-seconds (offset)
+  "Return integer number of seconds for OFFSET string.
+OFFSET should be a string like \"-0400\"."
+  (let* ((sign (substring offset 0 1))
+         (hours (string-to-number (substring offset 1 3)))
+         (minutes (string-to-number (substring offset 3)))
+         (seconds (+ (* hours 60 60)
+                     (* minutes 60))))
+    (if (string= sign "-")
+        (- seconds)
+      seconds)))
 
 (defun ts-now ()
   "Return `ts' struct set to now.
@@ -242,13 +262,13 @@ If TS-OR-FORMAT-STRING is a timestamp or nil, use the value of
 `ts-default-format'.  If both TS-OR-FORMAT-STRING and TS are nil,
 use the current time."
   (cl-etypecase ts-or-format-string
-    (ts (format-time-string ts-default-format (ts-unix ts-or-format-string)))
+    (ts (format-time-string ts-default-format (ts-unix ts-or-format-string) ts-tz))
     (string (cl-etypecase ts
-              (ts (format-time-string ts-or-format-string (ts-unix ts)))
-              (null (format-time-string ts-or-format-string))))
+              (ts (format-time-string ts-or-format-string (ts-unix ts) ts-tz))
+              (null (format-time-string ts-or-format-string nil ts-tz))))
     (null (cl-etypecase ts
-            (ts (format-time-string ts-default-format (ts-unix ts)))
-            (null (format-time-string ts-default-format))))))
+            (ts (format-time-string ts-default-format (ts-unix ts) ts-tz))
+            (null (format-time-string ts-default-format nil ts-tz))))))
 
 (defsubst ts-parse (string)
   "Return new `ts' struct, parsing STRING with `parse-time-string'."
@@ -303,12 +323,13 @@ Non-destructive.  The same as:
     (make-ts :unix (ts-unix ts))"
   (make-ts :unix (ts-unix ts)))
 
-(defsubst ts-update (ts)
+(defun ts-update (ts)
   "Return timestamp TS after updating its Unix timestamp from its other slots.
 Non-destructive.  To be used after setting slots with,
 e.g. `ts-fill'."
-  (pcase-let* (((cl-struct ts second minute hour day month year) ts))
-    (make-ts :unix (float-time (encode-time second minute hour day month year)))))
+  (pcase-let* (((cl-struct ts second minute hour day month year tz-abbr tz-offset-secs) ts))
+    (make-ts :unix (float-time (encode-time second minute hour day month year (when tz-offset-secs
+                                                                                (list tz-offset-secs tz-abbr)))))))
 
 (defsubst ts-parse-org-element (element)
   "Return timestamp object for Org timestamp element ELEMENT.
@@ -376,7 +397,7 @@ timestamp with Unix timestamp value derived from new slot values.
 SLOTS is a list of alternating key-value pairs like that passed
 to `make-ts'."
   (declare (advertised-calling-convention (&rest slots ts) nil))
-  (-let* (((&keys :second :minute :hour :day :month :year) args)
+  (-let* (((&keys :second :minute :hour :day :month :year :tz-abbr :tz-offset-secs) args)
           (ts (-last-item args)))
     ;; MAYBE: Add timezone offset?
     (setf ts (ts-fill ts))
@@ -392,6 +413,10 @@ to `make-ts'."
       (setf (ts-month ts) month))
     (when year
       (setf (ts-year ts) year))
+    (when tz-abbr
+      (setf (ts-tz-abbr ts) tz-abbr))
+    (when tz-offset-secs
+      (setf (ts-tz-offset-secs ts) tz-offset-secs))
     (ts-update ts)))
 
 (defmacro ts-define-fill ()
