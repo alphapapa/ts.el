@@ -17,6 +17,21 @@
 
 * Tasks
 
+** TODO [#A] Mention hash tables
+
+#+BEGIN_SRC elisp
+  ;; NOTE: ts structs don't (sometimes? or always?) compare properly
+  ;; with default hash tables, e.g. this code:
+
+  ;; (let* ((ts-a #s(ts nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil 1572670800.0))
+  ;; (ts-b #s(ts nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil 1572584400.0)))
+  ;; (list :equal (equal ts-a ts-b)
+  ;; :sxhash-equal (equal (sxhash ts-a) (sxhash ts-b)))) ;;=> (:equal nil :sxhash-equal t)
+
+  ;; So we must use the "contents-hash" table as described in the Elisp manual.
+  (define-hash-table-test 'contents-hash 'equal 'sxhash-equal)
+#+END_SRC
+
 ** TODO Use [[info:elisp#Defining%20Functions][define-inline]] instead of ~defsubst~
 
 ** TODO Ensure timezones are handled properly
