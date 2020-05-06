@@ -248,7 +248,7 @@
 ;;;;; Formatting
 
 (ert-deftest ts-format ()
-  (let ((ts (make-ts :year 2019 :month 7 :day 27 :hour 19 :minute 48 :second 08)))
+  (let ((ts (make-ts :year 2019 :month 7 :day 27 :hour 19 :minute 48 :second 08 :tz-offset "-0500")))
     ;; Following the pattern in the function:
     (should (equal (ts-format ts) "2019-07-27 19:48:08 -0500"))
     (should (equal (ts-format "%Y" ts) "2019"))
@@ -344,7 +344,8 @@
   ;; shouldn't cause Org to be loaded, so the user will probably have to do that.
   (require 'org)
   (let* ((org-ts-string "<2015-09-24 Thu .+1d>"))
-    (should (equal 1443070800.0 (ts-unix (ts-parse-org org-ts-string))))))
+    (should (equal (float-time (encode-time 0 0 0 24 9 2015))
+                   (ts-unix (ts-parse-org org-ts-string))))))
 
 (ert-deftest ts-parse-org-fill ()
   (should-error (ts-parse-org-fill nil "<2015-09-24 Thu .+1d>"))
@@ -406,7 +407,9 @@
                                    :hour-end nil :minute-end nil
                                    :begin 230314 :end 230335 :post-blank 0
                                    :repeater-type restart :repeater-value 1 :repeater-unit day))))
-    (should (equal 1443070800.0 (ts-unix (ts-parse-org-element org-ts)))))
+    (should (equal
+             (float-time (encode-time 0 0 0 24 9 2015))
+             (ts-unix (ts-parse-org-element org-ts)))))
   (let ((org-ts-string "<2015-09-24 Thu .+1d>"))
     (with-temp-buffer
       (delay-mode-hooks
@@ -416,7 +419,7 @@
         (should (->> (org-element-context)
                      (ts-parse-org-element)
                      (ts-unix)
-                     (equal 1443070800.0)))))))
+                     (equal (float-time (encode-time 0 0 0 24 9 2015)))))))))
 
 ;;;;; Other
 
