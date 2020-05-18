@@ -241,7 +241,7 @@
   (let* ((now (ts-now))
          (past (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 now)))
     (should (equal (ts-human-format-duration (ts-difference now past))
-                   "1 years, 35 days, 2 hours, 1 minutes, 5 seconds"))
+                   "1 year, 35 days, 2 hours, 1 minute, 5 seconds"))
     (should (equal (ts-human-format-duration (ts-difference now past) 'abbr)
                    "1y35d2h1m5s"))))
 
