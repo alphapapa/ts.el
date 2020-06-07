@@ -236,6 +236,22 @@ This is a non-inlined function, so it may be rebound, e.g. with
 `cl-letf' for testing."
   (make-ts :unix (float-time)))
 
+(defun ts-epoch(&optional epoch)
+  "Return `ts' struct set to an epoch.
+
+An epoch is a commonly agreed upon reference point from which
+time is measured. EPOCH is a symbol specifying the epoch.
+Currently only the unix epoch is supported.
+
+* EPOCH is nil or unix: The epoch is set to the unix epoch
+    1970-01-01 00:00:00 UTC.
+
+This is a non-inline function, so it may be rebound, e.g. with
+`cl-letf' for testing."
+  (cond
+   ((eq epoch 'nil) (make-ts :unix 0))
+   ((eq epoch 'unix) (make-ts :unix 0))))
+
 (defsubst ts-format (&optional ts-or-format-string ts)
   "Format timestamp with `format-time-string'.
 If TS-OR-FORMAT-STRING is a timestamp or nil, use the value of

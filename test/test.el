@@ -432,6 +432,16 @@
   (should (equal (floor (ts-unix (ts-now)))
                  (floor (string-to-number (format-time-string "%s"))))))
 
+(ert-deftest ts-epoch-nil-unix ()
+  "Ensure `ts-epoch' returns the unix epoch if no EPOCH is given."
+  (should (equal (floor (ts-unix (ts-epoch)))
+                 (floor (string-to-number (format-time-string "%s" 0))))))
+
+(ert-deftest ts-epoch-unix-unix ()
+  "Ensure `ts-epoch' returns the unix epoch if EPOCH 'unix is given."
+  (should (equal (floor (ts-unix (ts-epoch 'unix)))
+                 (floor (string-to-number (format-time-string "%s" 0))))))
+
 (ert-deftest ts-update ()
   (let* ((ts (ts-now))
          (one-year-ago ts))
