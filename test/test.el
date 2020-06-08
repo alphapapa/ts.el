@@ -339,6 +339,25 @@
     ;; 12:12, which means 0 seconds.
     (should (eq (ts-S ts) 0))))
 
+(ert-deftest ts-parse-timestamp ()
+  ;; common cases for second resolution
+  (should (equal 0 (ts-unix (ts-parse-timestamp 0))))
+  (should (equal 123 (ts-unix (ts-parse-timestamp 123))))
+  (should (equal -123 (ts-unix (ts-parse-timestamp -123))))
+  (should (equal 123.456 (ts-unix (ts-parse-timestamp 123.456))))
+  ;; normalization
+  (should (equal 123.456 (ts-unix (ts-parse-timestamp 123456 'milli))))
+  (should (equal 123.456789 (ts-unix (ts-parse-timestamp 123456789 'nano))))
+  (should (equal 123.456789012 (ts-unix (ts-parse-timestamp 123456789012 'pico))))
+  ;; normalization works even if timestamp is already a float
+  (should (equal 123.456789 (ts-unix (ts-parse-timestamp 123456.789 'milli))))
+  ;; string conversion
+  (should (equal 123 (ts-unix (ts-parse-timestamp "123"))))
+  (should (equal 123.456 (ts-unix (ts-parse-timestamp "123456" 'milli))))
+  (should (equal 123.456789 (ts-unix (ts-parse-timestamp "123456.789" 'milli))))
+  ;; we cannot test different epochs yet since there is only unix epoch defined
+  )
+
 (ert-deftest ts-parse-org ()
   ;; NOTE: Not sure how to best handle loading `org-parse-time-string'.  Calling (require 'ts)
   ;; shouldn't cause Org to be loaded, so the user will probably have to do that.
