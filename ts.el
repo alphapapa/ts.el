@@ -367,6 +367,10 @@ not support timestamps that contain seconds."
       (_ (error "FILL must be `begin' or `end'")))
     (make-ts :second second :minute minute :hour hour :day day :month month :year year)))
 
+(defsubst ts-parse-iso8601 (iso-8601)
+  "Return timestamp object for an ISO-8601 date string."
+  (make-ts :unix (float-time (parse-iso8601-time-string iso-8601))))
+
 ;;;; Functions
 
 (cl-defun ts-apply (&rest args)
