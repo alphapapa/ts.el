@@ -299,6 +299,7 @@ For a more interesting example, does a timestamp fall within the previous calend
 +  ~ts-dow (STRUCT)~ :: Access slot "dow" of ~ts~ struct ~STRUCT~.
 +  ~ts-doy (STRUCT)~ :: Access slot "doy" of ~ts~ struct ~STRUCT~.
 +  ~ts-hour (STRUCT)~ :: Access slot "hour" of ~ts~ struct ~STRUCT~.
++  ~ts-internal (STRUCT)~ :: Access slot "internal" of ~ts~ struct ~STRUCT~.  Slot represents an Emacs-internal time value (e.g. as returned by ~current-time~).
 +  ~ts-m (STRUCT)~ :: Access slot "month" of ~ts~ struct ~STRUCT~.
 +  ~ts-min (STRUCT)~ :: Access slot "minute" of ~ts~ struct ~STRUCT~.
 +  ~ts-minute (STRUCT)~ :: Access slot "minute" of ~ts~ struct ~STRUCT~.
