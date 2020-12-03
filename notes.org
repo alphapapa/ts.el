@@ -17,6 +17,8 @@
 
 * Tasks
 
+** TODO [#A] Export Info manual from readme
+
 ** TODO [#A] Mention hash tables
 
 #+BEGIN_SRC elisp
