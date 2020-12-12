@@ -444,8 +444,8 @@
     ;; these two values, depending on whether a leap day is involved.
     ;; FIXME: I guess this test will fail if a leap second is involved.  If that
     ;; ever actually causes the test to fail, it should be easy to fix then.
-    (should (or (equal 31536000 (floor (ts-difference ts one-year-ago)))
-                (equal 31622399 (floor (ts-difference ts one-year-ago)))))))
+    (should (or (equal (* 60 60 24 365) (floor (ts-difference ts one-year-ago)))
+                (equal (* 60 60 24 366) (floor (ts-difference ts one-year-ago)))))))
 
 ;;;; Footer
 
