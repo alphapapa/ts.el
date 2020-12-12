@@ -25,6 +25,8 @@
 
 ;;;; Requirements
 
+(require 'ert)
+
 (require 'ts)
 
 (require 'org-element)
