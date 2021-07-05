@@ -297,6 +297,27 @@ filled to \"12:12:00\", not \"12:12:59\"."
          float-time
          (make-ts :unix))))
 
+(cl-defsubst ts-parse-timestamp (timestamp &optional (resolution 'second) (epoch 'unix))
+  "Return a TS constructed from TIMESTAMP.
+Essentially: (make-ts :unix (+ normalized-timestamp ts-epoch(epoch)))
+
+* TIMESTAMP must be numberp-or-stringp. It defines the offset
+  from the EPOCH (default 'unix) in RESOLUTION (default 'second)
+* RESOLUTION (optional, default 'second) specifies the resolution of the
+  timestamp. One of: 'second, 'milli, 'nano, 'pico.
+* EPOCH (optional, default 'unix) specifies a `ts-epoch'. The TIMESTAMP is
+  calculated as offset from the epoch returned by `ts-epoch'."
+  (let* ((base (ts-unix (ts-epoch epoch)))
+         (ts (pcase-exhaustive timestamp
+               ((pred stringp) (string-to-number timestamp))
+               ((pred numberp) timestamp)))
+         (seconds (pcase-exhaustive resolution
+                    ('second ts)
+                    ('milli (/ ts 1.0e3))
+                    ('nano (/ ts 1.0e6))
+                    ('pico (/ ts 1.0e9)))))
+    (make-ts :unix (+ base seconds))))
+
 (defsubst ts-reset (ts)
   "Return TS with all slots cleared except `unix'.
 Non-destructive.  The same as:
