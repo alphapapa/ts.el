@@ -370,7 +370,7 @@ For a more interesting example, does a timestamp fall within the previous calend
 +  ~copy-ts (TS)~ :: Return copy of timestamp struct ~TS~.
 +  ~ts-difference (A B)~ :: Return difference in seconds between timestamps ~A~ and ~B~.
 +  ~ts-diff~ :: Alias for ~ts-difference~.
-+  ~ts-fill (TS)~ :: Return ~TS~ having filled all slots from its Unix timestamp.  This is non-destructive.
++  ~ts-fill (TS &optional ZONE)~ :: Return ~TS~ having filled all slots from its Unix timestamp.  This is non-destructive.  ~ZONE~ is passed to ~format-time-string~, which see.
 +  ~ts-now~ :: Return ~ts~ struct set to now.
 +  ~ts-p (STRUCT)~ :: 
 +  ~ts-reset (TS)~ :: Return ~TS~ with all slots cleared except ~unix~.  Non-destructive.  The same as:
@@ -392,7 +392,8 @@ For a more interesting example, does a timestamp fall within the previous calend
 
 ** 0.3-pre
 
-Nothing new yet.
+*Added*
++  Function ~ts-fill~ accepts a ~ZONE~ argument, like that passed to ~format-time-string~, which see.
 
 ** 0.2
 

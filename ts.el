@@ -417,12 +417,13 @@ to `make-ts'."
                                                             ('integer `(string-to-number ,val))
                                                             (_ val))))))
     ;; MAYBE: Construct the record manually?  Probably not worth it, but might eke out a bit more speed.
-    `(defun ts-fill (ts)
+    `(defun ts-fill (ts &optional zone)
        "Return TS having filled all slots from its Unix timestamp.
-This is non-destructive."
+This is non-destructive.  ZONE is passed to `format-time-string',
+which see."
        ;; MAYBE: Use `decode-time' instead of `format-time-string'?  It provides most of the values we need.  Should benchmark.
        (let ((time-values (save-match-data
-                            (split-string (format-time-string ,format-string (ts-unix ts)) "\f"))))
+                            (split-string (format-time-string ,format-string (ts-unix ts) zone) "\f"))))
          (make-ts :unix (ts-unix ts) ,@value-conversions)))))
 (ts-define-fill)
 
