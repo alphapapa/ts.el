@@ -467,7 +467,9 @@ leap years, leap seconds, etc."
                                     (if abbreviate "" " ")
                                     (if abbreviate
                                         ,(substring (symbol-name place) 0 1)
-                                      ,(symbol-name place)))))
+                                      (if (= ,place 1)
+                                          (s-chop-suffix "s" ,(symbol-name place))
+                                        ,(symbol-name place))))))
                 (join-places (&rest places)
                              ;; Return string joining the names and values of PLACES.
                              `(->> (list ,@(cl-loop for place in places

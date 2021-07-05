@@ -240,12 +240,18 @@
 ;;;;; Duration
 
 (ert-deftest ts-human-format-duration ()
-  (let* ((now (ts-now))
-         (past (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 now)))
+  (let* ((now    (ts-now))
+         (past   (ts-adjust 'day -400 'hour -2 'minute -1 'second -5 now))
+         (past-1 (ts-adjust 'day -366 'hour -1 'minute -1 'second -1 now))
+         (past-2 (ts-adjust 'day (- (+ 2 (* 365 2))) 'hour -2 'minute -2 'second -2 now)))
     (should (equal (ts-human-format-duration (ts-difference now past))
-                   "1 years, 35 days, 2 hours, 1 minutes, 5 seconds"))
+                   "1 year, 35 days, 2 hours, 1 minute, 5 seconds"))
     (should (equal (ts-human-format-duration (ts-difference now past) 'abbr)
-                   "1y35d2h1m5s"))))
+                   "1y35d2h1m5s"))
+    (should (equal (ts-human-format-duration (ts-difference now past-1))
+                   "1 year, 1 day, 1 hour, 1 minute, 1 second"))
+    (should (equal (ts-human-format-duration (ts-difference now past-2))
+                   "2 years, 2 days, 2 hours, 2 minutes, 2 seconds"))))
 
 ;;;;; Formatting
 
