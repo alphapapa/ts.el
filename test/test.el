@@ -250,7 +250,7 @@
 ;;;;; Formatting
 
 (ert-deftest ts-format ()
-  (let ((ts (make-ts :year 2019 :month 7 :day 27 :hour 19 :minute 48 :second 08)))
+  (let ((ts (make-ts :year 2019 :month 7 :day 27 :hour 19 :minute 48 :second 08 :tz-offset "-0500")))
     ;; Following the pattern in the function:
     (should (equal (ts-format ts) "2019-07-27 19:48:08 -0500"))
     (should (equal (ts-format "%Y" ts) "2019"))
