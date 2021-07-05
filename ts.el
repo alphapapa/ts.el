@@ -398,15 +398,15 @@ to `make-ts'."
 (defmacro ts-define-fill ()
   "Define `ts-fill' function that fills all applicable slots of `ts' object from its `unix' slot."
   (let* ((slots (->> (cl-struct-slot-info 'ts)
-                     (--select (and (not (member (car it) '(unix internal cl-tag-slot)))
-                                    (plist-get (cddr it) :constructor)))
+                  (--select (and (not (member (car it) '(unix internal cl-tag-slot)))
+                                 (plist-get (cddr it) :constructor)))
 
-                     (--map (list (intern (concat ":" (symbol-name (car it))))
-                                  (cddr it)))))
+                  (--map (list (intern (concat ":" (symbol-name (car it))))
+                               (cddr it)))))
          (keywords (-map #'car slots))
          (constructors (->> slots
-                            (--map (plist-get (cadr it) :constructor))
-                            -non-nil))
+                         (--map (plist-get (cadr it) :constructor))
+                         -non-nil))
          (types (--map (plist-get (cadr it) :type) slots))
          (format-string (s-join "\f" constructors))
          (value-conversions (cl-loop for type in types
