@@ -390,6 +390,10 @@ For a more interesting example, does a timestamp fall within the previous calend
 :TOC:      ignore-children
 :END:
 
+** 0.3-pre
+
+Nothing new yet.
+
 ** 0.2
 
 *Added*
