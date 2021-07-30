@@ -350,7 +350,7 @@ For a more interesting example, does a timestamp fall within the previous calend
 ** Duration
 
 +  ~ts-human-duration (SECONDS)~ :: Return plist describing duration ~SECONDS~ in years, days, hours, minutes, and seconds.  This is a simple calculation that does not account for leap years, leap seconds, etc.
-+  ~ts-human-format-duration (SECONDS &optional ABBREVIATE)~ :: Return human-formatted string describing duration ~SECONDS~.  If ~ABBREVIATE~ is non-nil, return a shorter version, without spaces.  This is a simple calculation that does not account for leap years, leap seconds, etc.
++  ~ts-human-format-duration (SECONDS &optional ABBREVIATE)~ :: Return human-formatted string describing duration ~SECONDS~.  If ~SECONDS~ is less than 1, returns ~"0 seconds"~.  If ~ABBREVIATE~ is non-nil, return a shorter version, without spaces.  This is a simple calculation that does not account for leap years, leap seconds, etc.
 
 ** Formatting
 
@@ -388,6 +388,11 @@ For a more interesting example, does a timestamp fall within the previous calend
 :PROPERTIES:
 :TOC:      ignore-children
 :END:
+
+** 0.2.1
+
+*Fixed*
++  ~ts-human-format-duration~ returned an empty string for durations less than 1 second (now returns ~"0 seconds"~).
 
 ** 0.2
 
