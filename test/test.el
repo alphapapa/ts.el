@@ -245,7 +245,11 @@
     (should (equal (ts-human-format-duration (ts-difference now past))
                    "1 years, 35 days, 2 hours, 1 minutes, 5 seconds"))
     (should (equal (ts-human-format-duration (ts-difference now past) 'abbr)
-                   "1y35d2h1m5s"))))
+                   "1y35d2h1m5s"))
+    (should (equal "0 seconds" (ts-human-format-duration 0)))
+    (should (equal "0 seconds" (ts-human-format-duration 0.9)))
+    (should (equal "0s" (ts-human-format-duration 0 t)))
+    (should (equal "0s" (ts-human-format-duration 0.9 t)))))
 
 ;;;;; Formatting
 

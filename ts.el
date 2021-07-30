@@ -456,9 +456,10 @@ seconds, etc."
 
 (cl-defun ts-human-format-duration (seconds &optional abbreviate)
   "Return human-formatted string describing duration SECONDS.
-If ABBREVIATE is non-nil, return a shorter version, without
-spaces.  This is a simple calculation that does not account for
-leap years, leap seconds, etc."
+If SECONDS is less than 1, returns \"0 seconds\".  If ABBREVIATE
+is non-nil, return a shorter version, without spaces.  This is a
+simple calculation that does not account for leap years, leap
+seconds, etc."
   ;; FIXME: Doesn't work with negative values, even though `ts-human-duration' does.
   (cl-macrolet ((format> (place)
                          ;; When PLACE is greater than 0, return formatted string using its symbol name.
@@ -475,7 +476,9 @@ leap years, leap seconds, etc."
                                    -non-nil
                                    (s-join (if abbreviate "" ", ")))))
     (-let* (((&plist :years :days :hours :minutes :seconds) (ts-human-duration seconds)))
-      (join-places years days hours minutes seconds))))
+      (if (< seconds 1)
+          (if abbreviate "0s" "0 seconds")
+        (join-places years days hours minutes seconds)))))
 
 ;;;;; Adjustors
 
