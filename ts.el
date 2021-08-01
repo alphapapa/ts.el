@@ -4,7 +4,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net
 ;; URL: http://github.com/alphapapa/ts.el
-;; Version: 0.2.1
+;; Version: 0.2.2
 ;; Package-Requires: ((emacs "26.1") (dash "2.14.1") (s "1.12.0"))
 ;; Keywords: date time timestamp
 
@@ -459,23 +459,23 @@ is non-nil, return a shorter version, without spaces.  This is a
 simple calculation that does not account for leap years, leap
 seconds, etc."
   ;; FIXME: Doesn't work with negative values, even though `ts-human-duration' does.
-  (cl-macrolet ((format> (place)
-                         ;; When PLACE is greater than 0, return formatted string using its symbol name.
-                         `(when (> ,place 0)
-                            (format "%d%s%s" ,place
-                                    (if abbreviate "" " ")
-                                    (if abbreviate
-                                        ,(substring (symbol-name place) 0 1)
-                                      ,(symbol-name place)))))
-                (join-places (&rest places)
-                             ;; Return string joining the names and values of PLACES.
-                             `(->> (list ,@(cl-loop for place in places
-                                                    collect `(format> ,place)))
-                                   -non-nil
-                                   (s-join (if abbreviate "" ", ")))))
-    (-let* (((&plist :years :days :hours :minutes :seconds) (ts-human-duration seconds)))
-      (if (< seconds 1)
-          (if abbreviate "0s" "0 seconds")
+  (if (< seconds 1)
+      (if abbreviate "0s" "0 seconds")
+    (cl-macrolet ((format> (place)
+                           ;; When PLACE is greater than 0, return formatted string using its symbol name.
+                           `(when (> ,place 0)
+                              (format "%d%s%s" ,place
+                                      (if abbreviate "" " ")
+                                      (if abbreviate
+                                          ,(substring (symbol-name place) 0 1)
+                                        ,(symbol-name place)))))
+                  (join-places (&rest places)
+                               ;; Return string joining the names and values of PLACES.
+                               `(->> (list ,@(cl-loop for place in places
+                                                      collect `(format> ,place)))
+                                  -non-nil
+                                  (s-join (if abbreviate "" ", ")))))
+      (-let* (((&plist :years :days :hours :minutes :seconds) (ts-human-duration seconds)))
         (join-places years days hours minutes seconds)))))
 
 ;;;;; Adjustors

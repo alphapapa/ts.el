@@ -247,7 +247,8 @@
     (should (equal "0 seconds" (ts-human-format-duration 0)))
     (should (equal "0 seconds" (ts-human-format-duration 0.9)))
     (should (equal "0s" (ts-human-format-duration 0 t)))
-    (should (equal "0s" (ts-human-format-duration 0.9 t)))))
+    (should (equal "0s" (ts-human-format-duration 0.9 t)))
+    (should (equal "4h23m" (ts-human-format-duration 15780.910933971405 t)))))
 
 ;;;;; Formatting
 
