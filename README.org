@@ -9,18 +9,21 @@ To improve performance (significantly), formatted date parts are computed lazily
 
 * Contents
 :PROPERTIES:
-:TOC:      this
+:TOC:      :include siblings :ignore this
 :END:
-  -  [[#examples][Examples]]
-  -  [[#usage][Usage]]
-    -  [[#accessors][Accessors]]
-    -  [[#adjustors][Adjustors]]
-    -  [[#comparators][Comparators]]
-    -  [[#duration][Duration]]
-    -  [[#formatting][Formatting]]
-    -  [[#parsing][Parsing]]
-    -  [[#misc][Misc.]]
-  -  [[#changelog][Changelog]]
+:CONTENTS:
+- [[#examples][Examples]]
+- [[#usage][Usage]]
+  - [[#accessors][Accessors]]
+  - [[#adjustors][Adjustors]]
+  - [[#comparators][Comparators]]
+  - [[#duration][Duration]]
+  - [[#formatting][Formatting]]
+  - [[#parsing][Parsing]]
+  - [[#misc][Misc.]]
+- [[#tips][Tips]]
+- [[#changelog][Changelog]]
+:END:
 
 * Examples
 
@@ -410,7 +413,7 @@ Emacs has a built-in function, ~format-seconds~, that produces output similar to
 
 * Changelog
 :PROPERTIES:
-:TOC:      ignore-children
+:TOC:  :depth 0
 :END:
 
 ** 0.3-pre
@@ -442,10 +445,9 @@ Emacs has a built-in function, ~format-seconds~, that produces output similar to
 ** 0.1
 
 First tagged release.  Published to MELPA.
-
 * License
 :PROPERTIES:
-:TOC:      ignore
+:TOC:      :ignore this
 :END:
 
 GPLv3
