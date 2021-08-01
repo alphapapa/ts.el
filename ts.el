@@ -454,6 +454,16 @@ seconds, etc."
            (minutes (dividef seconds 60)))
       (list :years years :days days :hours hours :minutes minutes :seconds seconds))))
 
+;; See also the built-in function `format-seconds', which I seem to have
+;; overlooked before writing this.  However, a quick benchmark, run
+;; 100,000 times, shows that, when controllable formatting is not needed,
+;; `ts-human-format-duration' is much faster and generates less garbage:
+
+;; | Form                     | x faster than next | Total runtime | # of GCs | Total GC runtime |
+;; |--------------------------+--------------------+---------------+----------+------------------|
+;; | ts-human-format-duration | 5.82               |      0.832945 |        3 |         0.574929 |
+;; | format-seconds           | slowest            |      4.848253 |       17 |         3.288799 |
+
 (cl-defun ts-human-format-duration (seconds &optional abbreviate)
   "Return human-formatted string describing duration SECONDS.
 If SECONDS is less than 1, returns \"0 seconds\".  If ABBREVIATE
