@@ -385,6 +385,29 @@ For a more interesting example, does a timestamp fall within the previous calend
    
    ~:aliases~: ~A~ list of symbols which will be aliased to the slot accessor, prepended with the struct name (e.g. a struct ~ts~ with slot ~year~ and alias ~y~ would create an alias ~ts-y~).
 
+* Tips
+:PROPERTIES:
+:TOC:      :depth 0
+:END:
+
+** ~ts-human-format-duration~ vs. ~format-seconds~
+
+Emacs has a built-in function, ~format-seconds~, that produces output similar to that of ~ts-human-format-duration~.  Its output is also controllable with a format string.  However, if the output of ~ts-human-format-duration~ is sufficient, it performs much better than ~format-seconds~.  This simple benchmark, run 100,000 times, shows that it runs much faster and generates less garbage:
+
+#+BEGIN_SRC elisp
+  (bench-multi-lexical :times 100000
+    :forms (("ts-human-format-duration" (ts-human-format-duration 15780.910933971405 t))
+            ("format-seconds" (format-seconds "%yy%dd%hh%mm%ss%z" 15780.910933971405))))
+#+END_SRC
+
+#+RESULTS:
+| Form                     | x faster than next | Total runtime | # of GCs | Total GC runtime |
+|--------------------------+--------------------+---------------+----------+------------------|
+| ts-human-format-duration | 5.82               |      0.832945 |        3 |         0.574929 |
+| format-seconds           | slowest            |      4.848253 |       17 |         3.288799 |
+
+(See the [[https://github.com/alphapapa/emacs-package-dev-handbook][Emacs Package Developer's Handbook]] for the ~bench-multi-lexical~ macro.)
+
 * Changelog
 :PROPERTIES:
 :TOC:      ignore-children
