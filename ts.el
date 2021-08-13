@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2018-2019 Adam Porter
 
-;; Author: Adam Porter <adam@alphapapa.net
+;; Author: Adam Porter <adam@alphapapa.net>
 ;; URL: http://github.com/alphapapa/ts.el
 ;; Version: 0.3-pre
 ;; Package-Requires: ((emacs "26.1") (dash "2.14.1") (s "1.12.0"))
