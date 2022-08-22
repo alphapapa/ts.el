@@ -398,15 +398,15 @@ to `make-ts'."
 (defmacro ts-define-fill ()
   "Define function that fills all applicable slots of a `ts' from its `unix' slot."
   (let* ((slots (->> (cl-struct-slot-info 'ts)
-                  (--select (and (not (member (car it) '(unix internal cl-tag-slot)))
-                                 (plist-get (cddr it) :constructor)))
+                     (--select (and (not (member (car it) '(unix internal cl-tag-slot)))
+                                    (plist-get (cddr it) :constructor)))
 
-                  (--map (list (intern (concat ":" (symbol-name (car it))))
-                               (cddr it)))))
+                     (--map (list (intern (concat ":" (symbol-name (car it))))
+                                  (cddr it)))))
          (keywords (-map #'car slots))
          (constructors (->> slots
-                         (--map (plist-get (cadr it) :constructor))
-                         -non-nil))
+                            (--map (plist-get (cadr it) :constructor))
+                            -non-nil))
          (types (--map (plist-get (cadr it) :type) slots))
          (format-string (s-join "\f" constructors))
          (value-conversions (cl-loop for type in types
@@ -485,8 +485,8 @@ seconds, etc."
                                ;; Return string joining the names and values of PLACES.
                                `(->> (list ,@(cl-loop for place in places
                                                       collect `(format> ,place)))
-                                  -non-nil
-                                  (s-join (if abbreviate "" ", ")))))
+                                     -non-nil
+                                     (s-join (if abbreviate "" ", ")))))
       (-let* (((&plist :years :days :hours :minutes :seconds) (ts-human-duration seconds)))
         (join-places years days hours minutes seconds)))))
 
