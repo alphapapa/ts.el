@@ -322,7 +322,7 @@ range."
 
 ;; We don't want to force `org' to load when this library does, so we declare
 ;; the function.  Users should load `org' before calling `ts-parse-org'.
-(declare-function org-parse-time-string "org.el")
+(declare-function org-parse-time-string "org-macs.el")
 
 (defsubst ts-parse-org (org-ts-string)
   "Return timestamp object for Org timestamp string ORG-TS-STRING.
