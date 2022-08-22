@@ -68,7 +68,7 @@
 ;;;; Structs
 
 (cl-defmacro ts-defstruct (&rest args)
-  "Like `cl-defstruct', but with additional slot options.
+  "Like `cl-defstruct', but with additional slot options from ARGS.
 
 Additional slot options and values:
 
@@ -371,7 +371,7 @@ not support timestamps that contain seconds."
 ;;;; Functions
 
 (cl-defun ts-apply (&rest args)
-  "Return new timestamp based on TS with new slot values.
+  "Return new timestamp based on TS with new slot values from ARGS.
 Fill timestamp slots, overwrite given slot values, and return new
 timestamp with Unix timestamp value derived from new slot values.
 SLOTS is a list of alternating key-value pairs like that passed
@@ -396,7 +396,7 @@ to `make-ts'."
     (ts-update ts)))
 
 (defmacro ts-define-fill ()
-  "Define `ts-fill' function that fills all applicable slots of `ts' object from its `unix' slot."
+  "Define function that fills all applicable slots of a `ts' from its `unix' slot."
   (let* ((slots (->> (cl-struct-slot-info 'ts)
                   (--select (and (not (member (car it) '(unix internal cl-tag-slot)))
                                  (plist-get (cddr it) :constructor)))
@@ -576,7 +576,8 @@ to 47 hours into the future:
      (setf ,ts (ts-update ,ts))))
 
 (cl-defmacro ts-incf (place &optional (value 1))
-  "Increment timestamp PLACE by VALUE (default 1), update its Unix timestamp, and return the new value of PLACE."
+  "Increment `ts' PLACE by VALUE (default 1) and return the new value of PLACE.
+Updates its `unix' slot accordingly."
   `(progn
      (setf ,(cadr place) (ts-fill ,(cadr place)))
      (prog1
@@ -585,7 +586,8 @@ to 47 hours into the future:
              (ts-update ,(cadr place))))))
 
 (cl-defmacro ts-decf (place &optional (value 1))
-  "Decrement timestamp PLACE by VALUE (default 1), update its Unix timestamp, and return the new value of PLACE."
+  "Decrement `ts' PLACE by VALUE (default 1) and return the new value of PLACE.
+Updates its `unix' slot accordingly."
   `(progn
      (setf ,(cadr place) (ts-fill ,(cadr place)))
      (prog1
