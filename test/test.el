@@ -434,6 +434,10 @@
                      (ts-unix)
                      (equal 1443070800.0)))))))
 
+(ert-deftest ts-parse-iso8601 ()
+  (let* ((iso8601-string "2015-09-24T00:00:00+00:00"))
+    (should (equal 1443070800.0 (ts-unix (ts-parse-iso8601 iso8601-string))))))
+
 ;;;;; Other
 
 (ert-deftest ts-apply ()
