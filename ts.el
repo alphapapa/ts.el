@@ -490,6 +490,10 @@ seconds, etc."
       (-let* (((&plist :years :days :hours :minutes :seconds) (ts-human-duration seconds)))
         (join-places years days hours minutes seconds)))))
 
+(defun ts-timestamp (ts)
+  "Turn a TS object into the timestamp format returned by `encode-time'."
+  (seconds-to-time (ts-unix ts)))
+
 ;;;;; Adjustors
 
 ;; These functions are very cool, and they may make the adjust function unnecessary, because you can
