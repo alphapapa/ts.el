@@ -213,20 +213,23 @@ slot `year' and alias `y' would create an alias `ts-y')."
                     collect `(defalias ,alias-name ,accessor-name))))))
 
 (ts-define-accessor internal (ts)
-  "Docstring."
+  "FIXME: Docstring."
   (apply #'encode-time (decode-time (ts-unix ts))))
 
 (ts-define-accessor hour (ts)
-  "foo."
+  "FIXME: Docstring."
   (string-to-number (format-time-string "%H" (ts-unix ts))))
 
-;; (internal
-;;  nil :accessor-init (apply #'encode-time (decode-time (ts-unix obj))))
-;; (unix
-;;  nil :accessor-init (pcase-let* (((cl-struct ts second minute hour day month year) obj))
-;;                       (if (and second minute hour day month year)
-;;                           (float-time (encode-time second minute hour day month year))
-;;                         (float-time))))
+(ts-define-accessor internal (ts)
+  "FIXME: Docstring."
+  (apply #'encode-time (decode-time (ts-unix ts))))
+
+(ts-define-accessor unix (ts)
+  "FIXME: Docstring."
+  (pcase-let* (((cl-struct ts second minute hour day month year) ts))
+    (if (and second minute hour day month year)
+        (float-time (encode-time second minute hour day month year))
+      (float-time))))
 
 ;; (tz-abbr
 ;;  nil :accessor-init (format-time-string "%Z" (ts-unix obj))
