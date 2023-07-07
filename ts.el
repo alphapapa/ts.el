@@ -86,42 +86,18 @@ slot `year' and alias `y' would create an alias `ts-y')."
   ;; except by ignoring warnings.
   (let* ((struct-name (car args))
          (struct-slots (cdr args))
-         (cl-defstruct-expansion (macroexpand `(cl-defstruct ,struct-name ,@struct-slots)))
+         (conc-name (intern (format "%s--" struct-name)))
+         (cl-defstruct-expansion (macroexpand `(cl-defstruct (,struct-name (:conc-name ,conc-name))
+                                                 ,@struct-slots)))
          accessor-forms alias-forms)
     (cl-loop for slot in struct-slots
              for pos from 1
              when (listp slot)
              do (-let* (((slot-name _slot-default . slot-options) slot)
                         ((&keys :accessor-init :aliases) slot-options)
-                        (accessor-name (intern (concat (symbol-name struct-name) "-" (symbol-name slot-name))))
-                        (accessor-docstring (format "Access slot \"%s\" of `%s' struct STRUCT."
-                                                    slot-name struct-name))
                         (struct-pred (intern (concat (symbol-name struct-name) "-p")))
-                        ;; Accessor form copied from macro expansion of `cl-defstruct'.
-                        (accessor-form `(cl-defsubst ,accessor-name (struct)
-                                          ,accessor-docstring
-                                          ;; FIXME: side-effect-free is probably not true here, but what about error-free?
-                                          ;;  (declare (side-effect-free error-free))
-                                          (or (,struct-pred struct)
-                                              (signal 'wrong-type-argument
-                                                      (list ',struct-name struct)))
-                                          ,(when accessor-init
-                                             `(unless (aref struct ,pos)
-                                                (aset struct ,pos ,accessor-init)))
-                                          ;; NOTE: It's essential that this `aref' form be last
-                                          ;; so the gv-setter works in the compiler macro.
-                                          (aref struct ,pos))))
-                  (push accessor-form accessor-forms)
-                  ;; Remove accessor forms from `cl-defstruct' expansion.  This may be distasteful,
-                  ;; but it would seem more distasteful to copy all of `cl-defstruct' and potentially
-                  ;; have the implementations diverge in the future when Emacs changes (e.g. the new
-                  ;; record type).
-                  (cl-loop for form in-ref cl-defstruct-expansion
-                           do (pcase form
-                                (`(cl-defsubst ,(and accessor (guard (eq accessor accessor-name)))
-                                      . ,_)
-                                 accessor  ; Silence "unused lexical variable" warning.
-                                 (setf form nil))))
+                        (accessor-name (intern (format "%s-%s" struct-name slot-name)))
+                        (internal-accessor-name (intern (format "%s--%s" struct-name slot-name))))
                   ;; Alias definitions.
                   (cl-loop for alias in aliases
                            for alias-name = (intern (concat (symbol-name struct-name) "-" (symbol-name alias)))
@@ -145,89 +121,189 @@ slot `year' and alias `y' would create an alias `ts-y')."
 
 (ts-defstruct ts
   (hour
-   nil :accessor-init (string-to-number (format-time-string "%H" (ts-unix struct)))
-   :aliases (H)
+   nil 
    :constructor "%H"
    :type integer)
   (minute
-   nil :accessor-init (string-to-number (format-time-string "%M" (ts-unix struct)))
-   :aliases (min M)
+   nil 
    :constructor "%M"
    :type integer)
   (second
-   nil :accessor-init (string-to-number (format-time-string "%S" (ts-unix struct)))
-   :aliases (sec S)
+   nil 
    :constructor "%S"
    :type integer)
   (day
-   nil :accessor-init (string-to-number (format-time-string "%d" (ts-unix struct)))
-   :aliases (day-of-month-num dom d)
+   nil 
    :constructor "%d"
    :type integer)
   (month
-   nil :accessor-init (string-to-number (format-time-string "%m" (ts-unix struct)))
-   :aliases (month-num moy m)
+   nil 
    :constructor "%m"
    :type integer)
   (year
-   nil :accessor-init (string-to-number (format-time-string "%Y" (ts-unix struct)))
-   :aliases (Y)
+   nil 
    :constructor "%Y"
    :type integer)
 
   (dow
-   nil :accessor-init (string-to-number (format-time-string "%w" (ts-unix struct)))
-   :aliases (day-of-week-num)
+   nil 
    :constructor "%w"
    :type integer)
   (day-abbr
-   nil :accessor-init (format-time-string "%a" (ts-unix struct))
-   :aliases (day-of-week-abbr)
+   nil 
    :constructor "%a")
   (day-name
-   nil :accessor-init (format-time-string "%A" (ts-unix struct))
-   :aliases (day-of-week-name)
+   nil 
    :constructor "%A")
-  ;; (doe nil
-  ;;      :accessor-init (days-between (format-time-string "%Y-%m-%d 00:00:00" (ts-unix struct))
-  ;;                                   "1970-01-01 00:00:00")
-  ;;      :aliases (day-of-epoch))
   (doy
-   nil :accessor-init (string-to-number (format-time-string "%j" (ts-unix struct)))
-   :aliases (day-of-year)
+   nil 
    :constructor "%j"
    :type integer)
 
   (woy
-   nil :accessor-init (string-to-number (format-time-string "%V" (ts-unix struct)))
-   :aliases (week week-of-year)
+   nil 
    :constructor "%V"
    :type integer)
 
   (month-abbr
-   nil :accessor-init (format-time-string "%b" (ts-unix struct))
-   :aliases (b)
+   nil 
    :constructor "%b")
   (month-name
-   nil :accessor-init (format-time-string "%B" (ts-unix struct))
-   :aliases (B)
+   nil 
    :constructor "%B")
 
   (tz-abbr
-   nil :accessor-init (format-time-string "%Z" (ts-unix struct))
+   nil
    :constructor "%Z")
   (tz-offset
-   nil :accessor-init (format-time-string "%z" (ts-unix struct))
+   nil
    :constructor "%z")
   ;; MAYBE: Add tz-offset-minutes
 
   (internal
-   nil :accessor-init (apply #'encode-time (decode-time (ts-unix struct))))
+   nil)
   (unix
-   nil :accessor-init (pcase-let* (((cl-struct ts second minute hour day month year) struct))
-                        (if (and second minute hour day month year)
-                            (float-time (encode-time second minute hour day month year))
-                          (float-time)))))
+   nil))
+
+(defmacro ts-define-accessor (names args docstring value-form)
+  (declare (indent defun))
+  (unless (listp names)
+    (setf names (list names)))
+  (let* ((name (car names))
+         (aliases (cdr names))
+         (accessor-name (intern (format "ts-%s" name)))
+         (internal-accessor-name (intern (format "ts--%s" name)))
+         (place (car args))
+         (lambda `(lambda (form)
+                    `(or ,(cadr form)
+                         (let ((value ,,value-form))
+                           (setf (,,internal-accessor-name ,(cadr form))
+                                 value)
+                           value)))))
+    `(progn
+       (defun ,accessor-name ,args ,docstring
+              (declare (compiler-macro ,lambda))
+              (or (,internal-accessor-name ,place)
+                  (let ((value ,value-form))
+                    (setf (,internal-accessor-name ,place) value)
+                    value))) 
+       ,@(when aliases
+           (cl-loop for alias in aliases
+                    for alias-name = (intern (format "ts-%s" alias))
+                    collect `(defalias ,alias-name ,accessor-name))))))
+
+(ts-define-accessor internal (ts)
+  "Docstring."
+  (apply #'encode-time (decode-time (ts-unix ts))))
+
+(ts-define-accessor hour (ts)
+  "foo."
+  (string-to-number (format-time-string "%H" (ts-unix ts))))
+
+;; (internal
+;;  nil :accessor-init (apply #'encode-time (decode-time (ts-unix obj))))
+;; (unix
+;;  nil :accessor-init (pcase-let* (((cl-struct ts second minute hour day month year) obj))
+;;                       (if (and second minute hour day month year)
+;;                           (float-time (encode-time second minute hour day month year))
+;;                         (float-time))))
+
+;; (tz-abbr
+;;  nil :accessor-init (format-time-string "%Z" (ts-unix obj))
+;;  :constructor "%Z")
+;; (tz-offset
+;;  nil :accessor-init (format-time-string "%z" (ts-unix obj))
+;;  :constructor "%z")
+
+;; (month-name
+;;  nil :accessor-init (format-time-string "%B" (ts-unix obj))
+;;  :aliases (B)
+;;  :constructor "%B")
+
+;; (month-abbr
+;;  nil :accessor-init (format-time-string "%b" (ts-unix obj))
+;;  :aliases (b)
+;;  :constructor "%b")
+
+;; (woy
+;;  nil :accessor-init (string-to-number (format-time-string "%V" (ts-unix obj)))
+;;  :aliases (week week-of-year)
+;;  :constructor "%V"
+;;  :type integer)
+
+;; (doy
+;;  nil :accessor-init (string-to-number (format-time-string "%j" (ts-unix obj)))
+;;  :aliases (day-of-year)
+;;  :constructor "%j"
+;;  :type integer)
+
+;; (day-name
+;;  nil :accessor-init (format-time-string "%A" (ts-unix obj))
+;;  :aliases (day-of-week-name)
+;;  :constructor "%A")
+
+;; (day-abbr
+;;  nil :accessor-init (format-time-string "%a" (ts-unix obj))
+;;  :aliases (day-of-week-abbr)
+;;  :constructor "%a")
+
+;; (dow
+;;  nil :accessor-init (string-to-number (format-time-string "%w" (ts-unix obj)))
+;;  :aliases (day-of-week-num)
+;;  :constructor "%w"
+;;  :type integer)
+
+;; (year
+;;  nil :accessor-init (string-to-number (format-time-string "%Y" (ts-unix obj)))
+;;  :aliases (Y)
+;;  :constructor "%Y"
+;;  :type integer)
+
+;; (month
+;;  nil :accessor-init (string-to-number (format-time-string "%m" (ts-unix obj)))
+;;  :aliases (month-num moy m)
+;;  :constructor "%m"
+;;  :type integer)
+
+;; (day
+;;  nil :accessor-init (string-to-number (format-time-string "%d" (ts-unix obj)))
+;;  :aliases (day-of-month-num dom d)
+;;  :constructor "%d"
+;;  :type integer)
+
+;; (second
+;;  nil :accessor-init (string-to-number (format-time-string "%S" (ts-unix obj)))
+;;  :aliases (sec S)
+;;  :constructor "%S"
+;;  :type integer)
+
+;; (minute
+;;  nil :accessor-init (string-to-number (format-time-string "%M" (ts-unix obj)))
+;;  :aliases (min M)
+;;  :constructor "%M"
+;;  :type integer)
+
+
 
 ;;;; Substs
 
