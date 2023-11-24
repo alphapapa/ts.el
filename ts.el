@@ -222,7 +222,7 @@ slot `year' and alias `y' would create an alias `ts-y')."
   ;; MAYBE: Add tz-offset-minutes
 
   (internal
-   nil :accessor-init (apply #'encode-time (decode-time (ts-unix struct))))
+   nil :accessor-init (time-convert (ts-unix struct) t))
   (unix
    nil :accessor-init (pcase-let* (((cl-struct ts second minute hour day month year) struct))
                         (if (and second minute hour day month year)
