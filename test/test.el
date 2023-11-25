@@ -74,10 +74,25 @@
 (ert-deftest ts-tz-abbr ()
   (should (equal (ts-tz-abbr (ts-now))
                  (format-time-string "%Z"))))
+
+  ;; The next cases are anticipated to require an update if ts switches to
+  ;; (TICKS . HZ) as its implementation time.
+  ;; (should (let ((ts (ts-now)))
+  ;;           (equal (ts-internal ts)
+  ;;                  (time-convert (ts-unix ts) t))))
+  ;; (should (let* ((time (float-time))
+  ;;                (ts (ts-apply :unix time (ts-now))))
+  ;;           (equal (ts-internal ts)
+  ;;                  (time-convert time t))))
+
 (ert-deftest ts-unix ()
   ;; Theoretically this test could fail if run extremely close to a second boundary, but it's probably good enough.
   (should (equal (floor (ts-unix (ts-now)))
                  (string-to-number (format-time-string "%s")))))
+
+(ert-deftest ts-internal ()
+  (should (pcase (ts-internal (ts-now))
+            (`(,(pred integerp) . ,(pred integerp)) t))))
 
 ;;;;; Adjustors
 
